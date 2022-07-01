@@ -1,0 +1,5 @@
+[request.florp]
+uri = "http://florp.blorp"
+
+[request.bloop]
+uri = "https://localhost"

@@ -1,0 +1,34 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30114.105
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{2988C4AF-C20F-4E9A-B77F-A4CD0AD4C2FA}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bloop.Cli", "src\Bloop.Cli\Bloop.Cli.csproj", "{BB968D45-65DC-40E6-A748-3F14A47F9C78}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bloop.Core", "src\Bloop.Core\Bloop.Core.csproj", "{1B600C7A-D5BE-42B8-8C14-CFF4A8A6E99D}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{BB968D45-65DC-40E6-A748-3F14A47F9C78}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BB968D45-65DC-40E6-A748-3F14A47F9C78}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BB968D45-65DC-40E6-A748-3F14A47F9C78}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BB968D45-65DC-40E6-A748-3F14A47F9C78}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B600C7A-D5BE-42B8-8C14-CFF4A8A6E99D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B600C7A-D5BE-42B8-8C14-CFF4A8A6E99D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B600C7A-D5BE-42B8-8C14-CFF4A8A6E99D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B600C7A-D5BE-42B8-8C14-CFF4A8A6E99D}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{BB968D45-65DC-40E6-A748-3F14A47F9C78} = {2988C4AF-C20F-4E9A-B77F-A4CD0AD4C2FA}
+		{1B600C7A-D5BE-42B8-8C14-CFF4A8A6E99D} = {2988C4AF-C20F-4E9A-B77F-A4CD0AD4C2FA}
+	EndGlobalSection
+EndGlobal
