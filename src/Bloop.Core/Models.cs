@@ -33,3 +33,8 @@ public class Variable
 
     public override string ToString() => $"{{ Source: {Source}, Value: {Value} }}";
 }
+
+public class Error
+{
+    public string Message { get; set; } = "";
+}

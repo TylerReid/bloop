@@ -14,7 +14,8 @@ uri = "https://localhost"
 [request.google]
 uri = "https://www.google.com"
 
-
+[request.somejson]
+uri = "https://stackoverflow.com/api/recent-chat"
 
 [variable.yep]
 source = "florp"
