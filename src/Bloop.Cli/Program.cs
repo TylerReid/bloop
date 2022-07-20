@@ -1,79 +1,60 @@
 ﻿using Bloop.Core;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.CommandLine;
 
-var config = await ConfigLoader.LoadConfigAsync("bloop.toml");
+namespace Bloop.Cli;
 
-foreach (var (name, request) in config.Request)
+public class Program
 {
-    Console.WriteLine($"{name} {request}");
-    foreach (var pp in request.PostProcess)
+    public static async Task Main(string request, bool prettyPrint = true, bool verbose = false, string configPath = "bloop.toml")
     {
-        Console.WriteLine($"\t{pp}");
-    }
-}
-
-foreach (var (name, var) in config.Variable)
-{
-    Console.WriteLine($"{name} {var}");
-}
-
-var blooper = new Blooper();
-
-var r = await blooper.SendRequest(config, "google");
-
-r.Match(
-    response => {
-        Console.WriteLine($"status was {response.StatusCode} for {response.RequestMessage?.RequestUri}");
-    },
-    error => Console.WriteLine(error)
-);
-
-r = await blooper.SendRequest(config, "not real");
-r.Match(
-    _ => Console.WriteLine("did not expect to get here"),
-    error => Console.WriteLine(error.Message)
-);
-
-r = await blooper.SendRequest(config, "somejson");
-if (r.Unwrap() is HttpResponseMessage message)
-{
-    await PrintResponse(message, new RequestOptions
-    {
-        PrettyPrint = true,
-        Verbose = true,
-    });
-}
-
-
-async Task PrintResponse(HttpResponseMessage response, RequestOptions options)
-{
-    if (options.Verbose)
-    {
-        Console.WriteLine($"Status: {response.StatusCode}");
-        Console.WriteLine();
-    }
-
-    var isJson = response.Content?.Headers?.ContentType?.MediaType == "application/json";
-    if (isJson && options.PrettyPrint)
-    {
-        var parsedJson = JsonNode.Parse(await response.Content!.ReadAsStreamAsync());
-        var json = parsedJson!.ToJsonString(options: new JsonSerializerOptions
+        var options = new RequestOptions
         {
-            WriteIndented = true,
-        });
-        Console.WriteLine(json);
-    }
-    else
-    {
-        var content = await response.Content!.ReadAsStringAsync();
-        Console.WriteLine(content);
-    }
-}
+            RequestName = request,
+            PrettyPrint = prettyPrint,
+            Verbose = verbose,
+            ConfigPath = configPath,
+        };
 
-public class RequestOptions
-{
-    public string RequestName { get; set; } = "";
-    public bool PrettyPrint { get; set; } = true;
-    public bool Verbose { get; set; } = false;
+        var config = await ConfigLoader.LoadConfigAsync(options.ConfigPath);
+        var blooper = new Blooper();
+
+        var response = await blooper.SendRequest(config, options.RequestName);
+        //todo MatchAsync
+        if (response.Unwrap() is HttpResponseMessage r)
+        {
+            await PrintResponse(r, options);
+        }
+        else if (response.Unwrap() is Error e)
+        {
+            Console.WriteLine(e.Message);
+        }
+
+    }
+
+    static async Task PrintResponse(HttpResponseMessage response, RequestOptions options)
+    {
+        if (options.Verbose)
+        {
+            Console.WriteLine($"Status: {response.StatusCode}");
+            Console.WriteLine();
+        }
+
+        var isJson = response.Content?.Headers?.ContentType?.MediaType == "application/json";
+        if (isJson && options.PrettyPrint)
+        {
+            var parsedJson = JsonNode.Parse(await response.Content!.ReadAsStreamAsync());
+            var json = parsedJson!.ToJsonString(options: new JsonSerializerOptions
+            {
+                WriteIndented = true,
+            });
+            Console.WriteLine(json);
+        }
+        else
+        {
+            var content = await response.Content!.ReadAsStringAsync();
+            Console.WriteLine(content);
+        }
+    }
 }

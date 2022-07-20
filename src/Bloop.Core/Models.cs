@@ -36,5 +36,10 @@ public class Variable
 
 public class Error
 {
-    public string Message { get; set; } = "";
+    public string Message { get; }
+    
+    public Error(string message)
+    {
+        Message = message;
+    }
 }

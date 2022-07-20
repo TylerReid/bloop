@@ -4,19 +4,16 @@ namespace Bloop.Core;
 
 public class Blooper
 {
-    private readonly HttpClient _client = new();
+    private readonly HttpClient _client;
 
-    public async Task<Either<HttpResponseMessage, Error>> SendRequest(Config config, string requestName)
+    public Blooper() : this(new()) {}
+    public Blooper(HttpClient client)
     {
-        
-        if (!config.Request.TryGetValue(requestName, out var request))
-        {
-            return new Error
-            {
-                Message = $"no request found with name `{requestName}` in config",
-            };
-        }
+        _client = client;
+    }
 
+    public async Task<Either<HttpResponseMessage, Error>> SendRequest(Request request)
+    {
         var output = new StringBuilder();
         
         var httpRequest = new HttpRequestMessage(request.Method, request.Uri);
@@ -31,5 +28,24 @@ public class Blooper
         }
 
         return await _client.SendAsync(httpRequest);
+    }
+
+    public async Task<Either<HttpResponseMessage, Error>> SendRequest(Config config, string requestName)
+    {
+        //todo replace with MatchAsync when the real Either gets open sourced
+        return GetRequest(config, requestName).Unwrap() switch {
+            Request r => await SendRequest(r),
+            Error e => e,
+            _ => new Error(""),
+        };
+    }
+
+    public Either<Request, Error> GetRequest(Config config, string requestName)
+    {
+        if (!config.Request.TryGetValue(requestName, out var request))
+        {
+            return new Error($"no request found with name `{requestName}` in config");
+        }
+        return request;
     }
 }
