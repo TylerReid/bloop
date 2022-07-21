@@ -6,4 +6,5 @@ public class RequestOptions
     public bool PrettyPrint { get; set; } = true;
     public bool Verbose { get; set; } = false;
     public string ConfigPath { get; set; } = "bloop.toml";
+    public bool Insecure { get; set; } = false;
 }

@@ -9,6 +9,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bloop.Cli", "src\Bloop.Cli\
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bloop.Core", "src\Bloop.Core\Bloop.Core.csproj", "{1B600C7A-D5BE-42B8-8C14-CFF4A8A6E99D}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C23DE76A-8AB3-45CA-94DA-A7A98083A2F6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApi", "tests\TestApi\TestApi.csproj", "{C2EF2D99-5FD0-46D4-9D59-218C0935C3AD}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,9 +30,14 @@ Global
 		{1B600C7A-D5BE-42B8-8C14-CFF4A8A6E99D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1B600C7A-D5BE-42B8-8C14-CFF4A8A6E99D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1B600C7A-D5BE-42B8-8C14-CFF4A8A6E99D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C2EF2D99-5FD0-46D4-9D59-218C0935C3AD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C2EF2D99-5FD0-46D4-9D59-218C0935C3AD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C2EF2D99-5FD0-46D4-9D59-218C0935C3AD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C2EF2D99-5FD0-46D4-9D59-218C0935C3AD}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{BB968D45-65DC-40E6-A748-3F14A47F9C78} = {2988C4AF-C20F-4E9A-B77F-A4CD0AD4C2FA}
 		{1B600C7A-D5BE-42B8-8C14-CFF4A8A6E99D} = {2988C4AF-C20F-4E9A-B77F-A4CD0AD4C2FA}
+		{C2EF2D99-5FD0-46D4-9D59-218C0935C3AD} = {C23DE76A-8AB3-45CA-94DA-A7A98083A2F6}
 	EndGlobalSection
 EndGlobal

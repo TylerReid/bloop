@@ -7,7 +7,7 @@ namespace Bloop.Cli;
 
 public class Program
 {
-    public static async Task Main(string request, bool prettyPrint = true, bool verbose = false, string configPath = "bloop.toml")
+    public static async Task Main(string request, bool prettyPrint = true, bool verbose = false, string configPath = "bloop.toml", bool insecure = false)
     {
         var options = new RequestOptions
         {
@@ -15,10 +15,17 @@ public class Program
             PrettyPrint = prettyPrint,
             Verbose = verbose,
             ConfigPath = configPath,
+            Insecure = insecure,
         };
 
         var config = await ConfigLoader.LoadConfigAsync(options.ConfigPath);
-        var blooper = new Blooper();
+
+        var insecureHandler = new HttpClientHandler();
+        insecureHandler.ServerCertificateCustomValidationCallback = (a, b, c, d) => true;
+        var client = options.Insecure
+            ? new HttpClient(insecureHandler)
+            : new HttpClient();
+        var blooper = new Blooper(client);
 
         var response = await blooper.SendRequest(config, options.RequestName);
         //todo MatchAsync

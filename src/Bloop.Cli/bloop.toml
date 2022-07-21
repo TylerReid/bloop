@@ -21,6 +21,9 @@ uri = "https://stackoverflow.com/api/recent-chat"
 variable = "activeUsers"
 jpath = "$.activeUsers"
 
+[request.testforecast]
+uri = "https://localhost:7284/weatherforecast"
+
 [variable.yep]
 source = "florp"
 
