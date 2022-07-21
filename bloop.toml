@@ -1,0 +1,31 @@
+[request.florp]
+uri = "http://florp.blorp"
+method = "Post"
+body = "{}"
+content_type = "application/json"
+headers = { Authorization = "Bearer bloop" }
+
+[[request.florp.post_process]]
+variable = "yep"
+
+[request.bloop]
+uri = "https://localhost"
+
+[request.google]
+uri = "https://www.google.com"
+
+[request.somejson]
+uri = "https://stackoverflow.com/api/recent-chat"
+
+[[request.somejson.post_process]]
+variable = "activeUsers"
+jpath = "$.activeUsers"
+
+[request.testforecast]
+uri = "https://localhost:7284/weatherforecast"
+
+[variable.yep]
+source = "florp"
+
+[variable.activeUsers]
+source = "somejson"
