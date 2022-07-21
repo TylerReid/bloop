@@ -17,5 +17,12 @@ uri = "https://www.google.com"
 [request.somejson]
 uri = "https://stackoverflow.com/api/recent-chat"
 
+[[request.somejson.post_process]]
+variable = "activeUsers"
+jpath = "$.activeUsers"
+
 [variable.yep]
 source = "florp"
+
+[variable.activeUsers]
+source = "somejson"

@@ -21,15 +21,15 @@ public class Request
 public class PostProcess
 {
     public string? Variable { get; set; }
-    public string? JPath { get; set; }
+    public string? Jpath { get; set; }
 
-    public override string ToString() => $"{{ Variable: {Variable}, JPath: {JPath} }}";
+    public override string ToString() => $"{{ Variable: {Variable}, JPath: {Jpath} }}";
 }
 
 public class Variable
 {
     public string Source { get; set; } = "";
-    public string? Value { get; set; } = "";
+    public string? Value { get; set; }
 
     public override string ToString() => $"{{ Source: {Source}, Value: {Value} }}";
 }

@@ -30,7 +30,6 @@ public class Program
         {
             Console.WriteLine(e.Message);
         }
-
     }
 
     static async Task PrintResponse(HttpResponseMessage response, RequestOptions options)
