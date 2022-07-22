@@ -59,3 +59,9 @@ public abstract class Either<T1, T2>
         }
     }
 }
+
+public class Unit
+{
+    public static Unit Instance { get; } = new();
+    private Unit() {}
+}

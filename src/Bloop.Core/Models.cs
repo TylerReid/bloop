@@ -20,8 +20,8 @@ public class Request
 
 public class PostProcess
 {
-    public string? Variable { get; set; }
-    public string? Jpath { get; set; }
+    public string Variable { get; set; } = "";
+    public string Jpath { get; set; } = "";
 
     public override string ToString() => $"{{ Variable: {Variable}, JPath: {Jpath} }}";
 }

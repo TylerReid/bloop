@@ -16,8 +16,12 @@ public class Blooper
     {
         var httpRequest = new HttpRequestMessage(request.Method, request.Uri);
 
-        //todo ensure config has all its variables satisfied
-        await VariableHandler.SatisfyVariables(config, request);
+        var maybeError = await SatisfyVariables(config, request);
+
+        if (maybeError.Unwrap() is Error e)
+        {
+            return e;
+        }
 
         foreach (var (name, value) in request.Headers)
         {
@@ -42,15 +46,21 @@ public class Blooper
             .Where(x => x.Variable is string && x.Jpath is string)
             .ToList();
 
-        if (jsonPostProcess.Any()) {
+        if (response.IsSuccessStatusCode && jsonPostProcess.Any()) {
             var json = JObject.Parse(content);
 
             foreach (var postprocess in jsonPostProcess)
             {
                 var jsonValue = json.SelectToken(postprocess.Jpath!);
-                //todo handle case where jsonValue is null
-                //todo handle case where variable doesn't exist
-                config.Variable[postprocess.Variable!].Value = jsonValue.ToString();
+                if (jsonValue == null)
+                {
+                    continue;
+                }
+                if (!config.Variable.ContainsKey(postprocess.Variable))
+                {
+                    return new Error($"variable named {postprocess.Variable} is used in a post process step, but is not defined as a variable");
+                }
+                config.Variable[postprocess.Variable].Value = jsonValue.ToString();
             }
         }
 
@@ -74,5 +84,34 @@ public class Blooper
             return new Error($"no request found with name `{requestName}` in config");
         }
         return request;
+    }
+
+    public async Task<Either<Unit, Error>> SatisfyVariables(Config config, Request request)
+    {
+        //todo document why this works
+        //todo infinite loop protection?
+        var variables = VariableHandler.GetVariables(request);
+        foreach (var v in variables)
+        {
+            if (config.Variable.TryGetValue(v, out var var))
+            {
+                if (var.Value != null)
+                {
+                    continue;
+                }
+
+                var response = await SendRequest(config, var.Source);
+                if (response.Unwrap() is Error e)
+                {
+                    return e;
+                }
+            }
+            else
+            {
+                return new Error($"variable {v} is used in request {request.Uri} but is not defined as a variable");
+            }
+        }
+
+        return Unit.Instance;
     }
 }

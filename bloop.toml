@@ -24,6 +24,10 @@ jpath = "$.activeUsers"
 [request.testforecast]
 uri = "https://localhost:7284/weatherforecast"
 
+[request.echo]
+uri = "https://localhost:7284/echo"
+headers = { X-Derp = "${activeUsers}" }
+
 [variable.yep]
 source = "florp"
 

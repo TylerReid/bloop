@@ -36,14 +36,4 @@ public class VariableHandler
     public static Dictionary<string, Variable> SatisfiedVariables(Config config) => config.Variable
         .Where(x => x.Value.Value is string)
         .ToDictionary(k => k.Key, v => v.Value);
-
-    public static async Task SatisfyVariables(Config config, Request request)
-    {
-        //todo actually do this
-        //  look up the source for a variable
-        //  Bloop the request
-        //  this will either need more vars so will end up here (limit recursion?)
-        //  or there will be a postprocess task in the bloop that will actually set it
-        await Task.CompletedTask;
-    }
 }
