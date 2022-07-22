@@ -1,6 +1,8 @@
 ﻿using Bloop.Core;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using CommandLine;
+using Error = Bloop.Core.Error;
 
 namespace Bloop.Cli;
 
@@ -8,13 +10,56 @@ public class Program
 {
     public static async Task<int> Main(string[] args)
     {
-        var parsedArgs = CommandLine.Parser.Default.ParseArguments<RequestOptions>(args);
-
-        return parsedArgs.Tag switch
+        var parseObject = CommandLine.Parser.Default.ParseArguments<RequestOptions, ListOptions>(args);
+        var parsedArgs = parseObject as Parsed<object>;
+        if (parsedArgs == null)
         {
-            CommandLine.ParserResultType.Parsed => await Run(parsedArgs.Value),
-            _ => 1,
-        };
+            return 1;
+        }
+
+        if (parsedArgs.Value is RequestOptions request)
+        {
+            return await Run(request);
+        }
+
+        if (parsedArgs.Value is ListOptions list)
+        {
+            return await Run(list);
+        }
+
+        Console.WriteLine("something bad happened, and we got these parsed types for cli options:");
+        Console.WriteLine(parsedArgs.GetType());
+        Console.WriteLine(parsedArgs.Value.GetType());
+
+        return 1;
+    }
+
+    private static async Task<int> Run(ListOptions options)
+    {
+        var config = await ConfigLoader.LoadConfigAsync(options.ConfigPath);
+
+        if ("all".StartsWith(options.Type) || "requests".StartsWith(options.Type))
+        {
+            Console.WriteLine("requests:");
+            foreach (var (name, request) in config.Request)
+            {
+                Console.WriteLine($"{name}:\t{request}");
+            }
+            Console.WriteLine();
+        }
+        
+
+        if ("all".StartsWith(options.Type) || "variables".StartsWith(options.Type))
+        {
+            Console.WriteLine("variables:");
+            foreach (var (name, variable) in config.Variable)
+            {
+                Console.WriteLine($"{name}:\t{variable}");
+            }
+            Console.WriteLine();
+        }
+
+        return 0;
     }
 
     private static async Task<int> Run(RequestOptions options)
