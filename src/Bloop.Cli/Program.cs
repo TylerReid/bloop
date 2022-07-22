@@ -36,12 +36,20 @@ public class Program
 
     private static async Task<int> Run(ListOptions options)
     {
-        var config = await ConfigLoader.LoadConfigAsync(options.ConfigPath);
+        var configLoad = await ConfigLoader.LoadConfigAsync(options.ConfigPath);
+
+        if (configLoad.Unwrap() is Error error)
+        {
+            Console.WriteLine(error.Message);
+            return 1;
+        }
+
+        var config = configLoad.Unwrap() as Config;
 
         if ("all".StartsWith(options.Type) || "requests".StartsWith(options.Type))
         {
             Console.WriteLine("requests:");
-            foreach (var (name, request) in config.Request)
+            foreach (var (name, request) in config!.Request)
             {
                 Console.WriteLine($"{name}:\t{request}");
             }
@@ -52,7 +60,7 @@ public class Program
         if ("all".StartsWith(options.Type) || "variables".StartsWith(options.Type))
         {
             Console.WriteLine("variables:");
-            foreach (var (name, variable) in config.Variable)
+            foreach (var (name, variable) in config!.Variable)
             {
                 Console.WriteLine($"{name}:\t{variable}");
             }
@@ -64,7 +72,15 @@ public class Program
 
     private static async Task<int> Run(RequestOptions options)
     {
-        var config = await ConfigLoader.LoadConfigAsync(options.ConfigPath);
+        var configLoad = await ConfigLoader.LoadConfigAsync(options.ConfigPath);
+
+        if (configLoad.Unwrap() is Error error)
+        {
+            Console.WriteLine(error.Message);
+            return 1;
+        }
+
+        var config = configLoad.Unwrap() as Config;
 
         var insecureHandler = new HttpClientHandler();
         insecureHandler.ServerCertificateCustomValidationCallback = (a, b, c, d) => true;
@@ -73,7 +89,7 @@ public class Program
             : new HttpClient();
         var blooper = new Blooper(client);
 
-        var response = await blooper.SendRequest(config, options.RequestName);
+        var response = await blooper.SendRequest(config!, options.RequestName);
         //todo MatchAsync
         if (response.Unwrap() is HttpResponseMessage r)
         {

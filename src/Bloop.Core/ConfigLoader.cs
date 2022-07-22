@@ -6,14 +6,25 @@ namespace Bloop.Core;
 public class ConfigLoader
 {
 
-    public static async Task<Config> LoadConfigAsync(string path)
+    public static async Task<Either<Config, Error>> LoadConfigAsync(string path)
     {
-        var content = await File.ReadAllTextAsync(path);
-        return Toml.ToModel<Config>(content, options: new TomlModelOptions
+        try
         {
-            IgnoreMissingProperties = true,
-            ConvertToModel = ConvertToModel,
-        });
+            var content = await File.ReadAllTextAsync(path);
+            return Toml.ToModel<Config>(content, options: new TomlModelOptions
+            {
+                IgnoreMissingProperties = true,
+                ConvertToModel = ConvertToModel,
+            });
+        }
+        catch (FileNotFoundException e)
+        {
+            return new Error(e.Message);
+        }
+        catch (Exception e)
+        {
+            return new Error($"Could not load config file at {path}. {e.Message}");
+        }
     }
 
     private static object? ConvertToModel(object value, Type type)
