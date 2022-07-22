@@ -1,23 +1,24 @@
 ﻿using Bloop.Core;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using System.CommandLine;
 
 namespace Bloop.Cli;
 
 public class Program
 {
-    public static async Task Main(string request, bool prettyPrint = true, bool verbose = false, string configPath = "bloop.toml", bool insecure = false)
+    public static async Task<int> Main(string[] args)
     {
-        var options = new RequestOptions
-        {
-            RequestName = request,
-            PrettyPrint = prettyPrint,
-            Verbose = verbose,
-            ConfigPath = configPath,
-            Insecure = insecure,
-        };
+        var parsedArgs = CommandLine.Parser.Default.ParseArguments<RequestOptions>(args);
 
+        return parsedArgs.Tag switch
+        {
+            CommandLine.ParserResultType.Parsed => await Run(parsedArgs.Value),
+            _ => 1,
+        };
+    }
+
+    private static async Task<int> Run(RequestOptions options)
+    {
         var config = await ConfigLoader.LoadConfigAsync(options.ConfigPath);
 
         var insecureHandler = new HttpClientHandler();
@@ -36,7 +37,10 @@ public class Program
         else if (response.Unwrap() is Error e)
         {
             Console.WriteLine(e.Message);
+            return 1;
         }
+
+        return 0;
     }
 
     static async Task PrintResponse(HttpResponseMessage response, RequestOptions options)
