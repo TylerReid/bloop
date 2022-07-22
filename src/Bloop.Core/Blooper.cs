@@ -14,14 +14,13 @@ public class Blooper
 
     public async Task<Either<HttpResponseMessage, Error>> SendRequest(Config config, Request request)
     {
-        var httpRequest = new HttpRequestMessage(request.Method, request.Uri);
-
         var maybeError = await SatisfyVariables(config, request);
-
         if (maybeError.Unwrap() is Error e)
         {
             return e;
         }
+
+        var httpRequest = new HttpRequestMessage(request.Method, VariableHandler.ExpandVariables(request.Uri, config));
 
         foreach (var (name, value) in request.Headers)
         {
@@ -69,7 +68,6 @@ public class Blooper
 
     public async Task<Either<HttpResponseMessage, Error>> SendRequest(Config config, string requestName)
     {
-        //todo replace with MatchAsync when the real Either gets open sourced
         return GetRequest(config, requestName).Unwrap() switch {
             Request r => await SendRequest(config, r),
             Error e => e,

@@ -14,6 +14,7 @@ public class VariableHandler
 
     public static List<string> GetVariables(Request request) => request.Headers.Values.SelectMany(GetVariables)
         .Concat(GetVariables(request.Body ?? ""))
+        .Concat(GetVariables(request.Uri))
         .Distinct()
         .ToList();
 

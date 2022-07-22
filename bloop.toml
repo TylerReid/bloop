@@ -29,6 +29,9 @@ uri = "https://localhost:7284/weatherforecast"
 uri = "https://localhost:7284/echo"
 headers = { X-Derp = "${activeUsers} ${yep}" }
 
+[request.echoquery]
+uri = "http://localhost:5284/echo/query?something=${activeUsers}"
+
 [variable.yep]
 source = "florp"
 

@@ -38,36 +38,36 @@ public class Program
     {
         var configLoad = await ConfigLoader.LoadConfigAsync(options.ConfigPath);
 
-        if (configLoad.Unwrap() is Error error)
-        {
-            Console.WriteLine(error.Message);
-            return 1;
-        }
+        return configLoad.Match(
+            config => {
+                if ("all".StartsWith(options.Type) || "requests".StartsWith(options.Type))
+                {
+                    Console.WriteLine("requests:");
+                    foreach (var (name, request) in config!.Request)
+                    {
+                        Console.WriteLine($"{name}:\t{request}");
+                    }
+                    Console.WriteLine();
+                }
+                
 
-        var config = configLoad.Unwrap() as Config;
+                if ("all".StartsWith(options.Type) || "variables".StartsWith(options.Type))
+                {
+                    Console.WriteLine("variables:");
+                    foreach (var (name, variable) in config!.Variable)
+                    {
+                        Console.WriteLine($"{name}:\t{variable}");
+                    }
+                    Console.WriteLine();
+                }
 
-        if ("all".StartsWith(options.Type) || "requests".StartsWith(options.Type))
-        {
-            Console.WriteLine("requests:");
-            foreach (var (name, request) in config!.Request)
-            {
-                Console.WriteLine($"{name}:\t{request}");
+                return 0;
+            },
+            error => {
+                Console.WriteLine(error.Message);
+                return 1;
             }
-            Console.WriteLine();
-        }
-        
-
-        if ("all".StartsWith(options.Type) || "variables".StartsWith(options.Type))
-        {
-            Console.WriteLine("variables:");
-            foreach (var (name, variable) in config!.Variable)
-            {
-                Console.WriteLine($"{name}:\t{variable}");
-            }
-            Console.WriteLine();
-        }
-
-        return 0;
+        );
     }
 
     private static async Task<int> Run(RequestOptions options)
@@ -80,8 +80,6 @@ public class Program
             return 1;
         }
 
-        var config = configLoad.Unwrap() as Config;
-
         var insecureHandler = new HttpClientHandler();
         insecureHandler.ServerCertificateCustomValidationCallback = (a, b, c, d) => true;
         var client = options.Insecure
@@ -89,25 +87,25 @@ public class Program
             : new HttpClient();
         var blooper = new Blooper(client);
 
-        var response = await blooper.SendRequest(config!, options.RequestName);
-        //todo MatchAsync
-        if (response.Unwrap() is HttpResponseMessage r)
-        {
-            await PrintResponse(r, options);
-        }
-        else if (response.Unwrap() is Error e)
-        {
-            Console.WriteLine(e.Message);
-            return 1;
-        }
+        var response = await blooper.SendRequest(configLoad.UnwrapSuccess(), options.RequestName);
 
-        return 0;
+        return await response.MatchAsync<int>(
+            async r => {
+                await PrintResponse(r, options);
+                return 0;
+            },
+            e => {
+                Console.WriteLine(e.Message);
+                return Task.FromResult(1);
+            }
+        );
     }
 
     static async Task PrintResponse(HttpResponseMessage response, RequestOptions options)
     {
         if (options.Verbose)
         {
+            Console.WriteLine($"Request Uri: {response.RequestMessage?.RequestUri}");
             Console.WriteLine($"Status: {response.StatusCode}");
             Console.WriteLine();
         }

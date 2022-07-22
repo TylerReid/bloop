@@ -24,4 +24,11 @@ public class EchoController : ControllerBase
             request.Headers,
         });
     }
+
+    [HttpGet]
+    [Route("query")]
+    public IActionResult Echo([FromQuery]string something)
+    {
+        return Ok(something);
+    }
 }
