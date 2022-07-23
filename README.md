@@ -44,3 +44,31 @@ Status: OK
 
 42
 ```
+
+## Requests
+Named http requests to make
+```toml
+[request.florp]
+uri = "http://localhost:5284/echo"
+method = "Get"
+body = "{}"
+content_type = "application/json"
+headers = { Authorization = "Bearer ${command}" }
+```
+
+## Variables
+Variables can be used in request header values, bodies, and the uri by using `${someVariableName}` inside of the definition.
+```toml
+[variable.activeUsers]
+source = "somejson"
+jpath = "$.activeUsers"
+
+[variable.command]
+command = "./scripts/testVariableScript.ps1"
+
+```
+
+### Variable Sources
+* Setting a constant value on its `value` property
+* Some other request, extracted from its response via a [jpath](https://tools.ietf.org/id/draft-goessner-dispatch-jsonpath-00.html#section-1.3)
+* An external program or script by using `command` and optionally `command_args`
