@@ -5,7 +5,6 @@ Bloops things! A postman alternative that uses TOML as a configuration file, and
 
 ```console
 $ bloop --help
-
   request    (Default Verb)
 
   list       list requests and variables
@@ -15,7 +14,6 @@ $ bloop --help
   version    Display version information.
 
 $ bloop request --help
-
   --prettyprint        (Default: true)
 
   -v, --verbose        (Default: false)
@@ -33,12 +31,12 @@ $ bloop request --help
 
 ```console
 $ bloop list
+requests:
 somejson:       { Uri: https://stackoverflow.com/api/recent-chat, Method: GET }
-    { Variable: activeUsers, JPath: $.activeUsers }
 echoquery:      { Uri: http://localhost:5284/echo/query?something=${activeUsers}, Method: GET }
 
 variables:
-activeUsers:    { Source: somejson }
+activeUsers:    { Source: somejson, Jpath: $.activeUsers }
 
 $ bloop echoquery -v
 Request Uri: http://localhost:5284/echo/query?something=42
