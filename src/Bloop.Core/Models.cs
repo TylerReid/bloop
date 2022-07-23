@@ -36,6 +36,7 @@ public class Variable
     public string? Jpath { get; set; }
     public string? Command { get; set; }
     public string? CommandArgs { get; set; }
+    public string? File { get; set; }
 
     public override string ToString()
     {
@@ -55,6 +56,10 @@ public class Variable
         if (CommandArgs != null)
         {
             s += $", CommandArgs: {CommandArgs}";
+        }
+        if (File != null)
+        {
+            s += $", File: {File}";
         }
         return s + " }";
     }

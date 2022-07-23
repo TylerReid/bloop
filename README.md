@@ -1,5 +1,5 @@
 # Bloop
-Bloops things! A postman alternative that uses TOML as a configuration file, and automatically detects used variables and performs requests needed to satisfy them.
+Bloops things! A postman alternative that uses [TOML](https://toml.io) as a configuration file, and automatically detects used variables and performs requests needed to satisfy them.
 
 ## Usage
 

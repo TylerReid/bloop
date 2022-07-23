@@ -122,7 +122,20 @@ public class Blooper
                     continue;
                 }
 
-                return new Error($"variable {v} does not have a jpath or command defined");
+                if (variable.File != null)
+                {
+                    try
+                    {
+                        variable.Value = await File.ReadAllTextAsync(variable.File);
+                        continue;
+                    }
+                    catch (Exception e)
+                    {
+                        return new Error($"error loading variable from file {variable.File}: {e.Message}");
+                    }
+                }
+
+                return new Error($"variable {v} does not have a value, file, jpath, or command defined");
             }
             else
             {

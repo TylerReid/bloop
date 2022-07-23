@@ -36,4 +36,4 @@ source = "somejson"
 jpath = "$.activeUsers"
 
 [variable.command]
-command = "./scripts/testVariableScript.ps1"
+file = "./scripts/testVariableScript.ps1"
