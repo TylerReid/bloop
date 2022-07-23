@@ -40,26 +40,30 @@ public class Blooper
 
         var content = await response.Content.ReadAsStringAsync();
 
-        //maybe support xpath or like direct body response to var?
-        var jsonPostProcess = request.PostProcess
-            .Where(x => x.Variable is string && x.Jpath is string)
-            .ToList();
+        
+        if (response.IsSuccessStatusCode)
+        {
+            var requestName = config.Request.Single(x => x.Value == request).Key;
+            var variables = config.Variable.Where(x => x.Value.Source == requestName);
 
-        if (response.IsSuccessStatusCode && jsonPostProcess.Any()) {
-            var json = JObject.Parse(content);
-
-            foreach (var postprocess in jsonPostProcess)
+            //maybe support xpath or like direct body response to var?
+            if (response.Content?.Headers?.ContentType?.MediaType == "application/json")
             {
-                var jsonValue = json.SelectToken(postprocess.Jpath!);
-                if (jsonValue == null)
+                var json = JObject.Parse(content);
+                foreach (var (_, variable) in variables)
                 {
-                    continue;
+                    if (variable.Jpath == null)
+                    {
+                        continue;
+                    }
+
+                    var jsonValue = json.SelectToken(variable.Jpath!);
+                    if (jsonValue == null)
+                    {
+                        continue;
+                    }
+                    variable.Value = jsonValue.ToString();
                 }
-                if (!config.Variable.ContainsKey(postprocess.Variable))
-                {
-                    return new Error($"variable named {postprocess.Variable} is used in a post process step, but is not defined as a variable");
-                }
-                config.Variable[postprocess.Variable].Value = jsonValue.ToString();
             }
         }
 

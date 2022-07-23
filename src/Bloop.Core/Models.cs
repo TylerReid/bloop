@@ -13,47 +13,38 @@ public class Request
     public string? Body { get; set; }
     public string? ContentType { get; set; }
     public Dictionary<string, string> Headers { get; set;} = new();
-    public List<PostProcess> PostProcess { get; set; } = new();
 
     public override string ToString()
     {
         var s = $"{{ Uri: {Uri}, Method: {Method}";
-        if (Body is string)
+        if (Body != null)
         {
             s += $", Body: {Body}";
         }
-        if (ContentType is string)
+        if (ContentType != null)
         {
             s += $", ContentType: {ContentType}";
         }
-        s += " }";
-        foreach (var pp in PostProcess)
-        {
-            s += $"\n\t{pp}";
-        }
-        return s;
+        return s + " }";
     }
-}
-
-public class PostProcess
-{
-    public string Variable { get; set; } = "";
-    public string Jpath { get; set; } = "";
-
-    public override string ToString() => $"{{ Variable: {Variable}, JPath: {Jpath} }}";
 }
 
 public class Variable
 {
     public string Source { get; set; } = "";
     public string? Value { get; set; }
+    public string? Jpath { get; set; }
 
     public override string ToString()
     {
         var s = $"{{ Source: {Source}";
-        if (Value is string)
+        if (Value != null)
         {
             s += $", Value: {Value}";
+        }
+        if (Jpath != null)
+        {
+            s += $", Jpath: {Jpath}";
         }
         return s + " }";
     }
