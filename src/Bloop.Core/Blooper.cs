@@ -135,6 +135,12 @@ public class Blooper
                     }
                 }
 
+                if (variable.Env != null)
+                {
+                    variable.Value = Environment.GetEnvironmentVariable(variable.Env);
+                    continue;
+                }
+
                 return new Error($"variable {v} does not have a value, file, jpath, or command defined");
             }
             else

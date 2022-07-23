@@ -1,3 +1,5 @@
+using System.Linq.Expressions;
+
 namespace Bloop.Core;
 
 public class Config
@@ -17,14 +19,8 @@ public class Request
     public override string ToString()
     {
         var s = $"{{ Uri: {Uri}, Method: {Method}";
-        if (Body != null)
-        {
-            s += $", Body: {Body}";
-        }
-        if (ContentType != null)
-        {
-            s += $", ContentType: {ContentType}";
-        }
+        s = ModelHelper.AppendIfValue(s, () => Body);
+        s = ModelHelper.AppendIfValue(s, () => ContentType);
         return s + " }";
     }
 }
@@ -37,31 +33,32 @@ public class Variable
     public string? Command { get; set; }
     public string? CommandArgs { get; set; }
     public string? File { get; set; }
+    public string? Env { get; set; }
 
     public override string ToString()
     {
         var s = $"{{ Source: {Source}";
-        if (Value != null)
-        {
-            s += $", Value: {Value}";
-        }
-        if (Jpath != null)
-        {
-            s += $", Jpath: {Jpath}";
-        }
-        if (Command != null)
-        {
-            s += $", Command: {Command}";
-        }
-        if (CommandArgs != null)
-        {
-            s += $", CommandArgs: {CommandArgs}";
-        }
-        if (File != null)
-        {
-            s += $", File: {File}";
-        }
+        s = ModelHelper.AppendIfValue(s, () => Value);
+        s = ModelHelper.AppendIfValue(s, () => Jpath);
+        s = ModelHelper.AppendIfValue(s, () => Command);
+        s = ModelHelper.AppendIfValue(s, () => CommandArgs);
+        s = ModelHelper.AppendIfValue(s, () => File);
+        s = ModelHelper.AppendIfValue(s, () => Env);
         return s + " }";
+    }
+}
+
+public class ModelHelper
+{
+    // this is dumb but fun
+    public static string AppendIfValue(string s, Expression<Func<object?>> expression)
+    {
+        var value = expression.Compile()();
+        if (value != null)
+        {
+            s += $", {(expression.Body as MemberExpression)?.Member?.Name}: {value}";
+        }
+        return s;
     }
 }
 
