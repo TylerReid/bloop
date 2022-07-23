@@ -34,6 +34,8 @@ public class Variable
     public string Source { get; set; } = "";
     public string? Value { get; set; }
     public string? Jpath { get; set; }
+    public string? Command { get; set; }
+    public string? CommandArgs { get; set; }
 
     public override string ToString()
     {
@@ -45,6 +47,14 @@ public class Variable
         if (Jpath != null)
         {
             s += $", Jpath: {Jpath}";
+        }
+        if (Command != null)
+        {
+            s += $", Command: {Command}";
+        }
+        if (CommandArgs != null)
+        {
+            s += $", CommandArgs: {CommandArgs}";
         }
         return s + " }";
     }

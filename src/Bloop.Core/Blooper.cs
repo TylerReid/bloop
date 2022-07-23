@@ -95,18 +95,34 @@ public class Blooper
         var variables = VariableHandler.GetVariables(request);
         foreach (var v in variables)
         {
-            if (config.Variable.TryGetValue(v, out var var))
+            if (config.Variable.TryGetValue(v, out var variable))
             {
-                if (var.Value != null)
+                if (variable.Value != null)
                 {
                     continue;
                 }
 
-                var response = await SendRequest(config, var.Source);
-                if (response.Unwrap() is Error e)
+                if (variable.Jpath != null)
                 {
-                    return e;
+                    var response = await SendRequest(config, variable.Source);
+                    if (response.Unwrap() is Error e)
+                    {
+                        return e;
+                    }
+                    continue;
                 }
+
+                if (variable.Command != null)
+                {
+                    var commandResult = await VariableHandler.RunCommand(variable);
+                    if (commandResult.Unwrap() is Error e)
+                    {
+                        return e;
+                    }
+                    continue;
+                }
+
+                return new Error($"variable {v} does not have a jpath or command defined");
             }
             else
             {
