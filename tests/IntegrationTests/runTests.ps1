@@ -6,8 +6,14 @@ function Assert($expected, $actual) {
     }
 }
 
+Set-Location $PSScriptRoot
+
 Write-Host "Starting test server"
-$testJob = Start-Job -FilePath ./scripts/runTestServer.ps1
+$testJob = Start-Job -ScriptBlock {
+    Set-Location ../TestApi
+    dotnet run
+}
+
 $waitCount = 0
 while (-not (Test-Connection -TargetName localhost -TcpPort 5284))
 {
@@ -20,8 +26,6 @@ while (-not (Test-Connection -TargetName localhost -TcpPort 5284))
 }
 
 Write-Host "Beginning tests"
-
-Set-Location $PSScriptRoot
 
 $list = bloop list
 Write-Host "`nbloop list output:"

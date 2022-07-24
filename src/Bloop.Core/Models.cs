@@ -1,4 +1,7 @@
 using System.Linq.Expressions;
+using System.Reflection;
+using System.Text;
+using Newtonsoft.Json;
 
 namespace Bloop.Core;
 
@@ -16,13 +19,7 @@ public class Request
     public string? ContentType { get; set; }
     public Dictionary<string, string> Headers { get; set;} = new();
 
-    public override string ToString()
-    {
-        var s = $"{{ Uri: {Uri}, Method: {Method}";
-        s = ModelHelper.AppendIfValue(s, () => Body);
-        s = ModelHelper.AppendIfValue(s, () => ContentType);
-        return s + " }";
-    }
+    public override string ToString() => ModelHelper.ToString(this);
 }
 
 public class Variable
@@ -35,31 +32,39 @@ public class Variable
     public string? File { get; set; }
     public string? Env { get; set; }
 
-    public override string ToString()
-    {
-        var s = "{ ";
-        s = ModelHelper.AppendIfValue(s, () => Source);
-        s = ModelHelper.AppendIfValue(s, () => Value);
-        s = ModelHelper.AppendIfValue(s, () => Jpath);
-        s = ModelHelper.AppendIfValue(s, () => Command);
-        s = ModelHelper.AppendIfValue(s, () => CommandArgs);
-        s = ModelHelper.AppendIfValue(s, () => File);
-        s = ModelHelper.AppendIfValue(s, () => Env);
-        return s + " }";
-    }
+    public override string ToString() => ModelHelper.ToString(this);
 }
 
 internal class ModelHelper
 {
     // this is dumb but fun
-    public static string AppendIfValue(string s, Expression<Func<object?>> expression)
+    public static string ToString<T>(T obj)
     {
-        var value = expression.Compile()();
-        if (value != null)
+        var sb = new StringBuilder();
+        sb.Append("{ ");
+
+        var comma = "";
+        var type = typeof(T);
+        foreach (var property in type.GetProperties())
         {
-            s += $"{(s.Contains(":") ? "," : "")} {(expression.Body as MemberExpression)?.Member?.Name}: {value}";
+            var value = property.GetValue(obj);
+            if (value == null)
+            {
+                continue;
+            }
+            if (value is Dictionary<string, string> d)
+            {
+                //todo print these? might be too much info
+            }
+            else
+            {
+                sb.Append($"{comma} {property.Name}: {value}");
+            }
+            comma = ",";
         }
-        return s;
+
+        sb.Append(" }");
+        return sb.ToString();
     }
 }
 
