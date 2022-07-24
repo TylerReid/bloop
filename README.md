@@ -68,9 +68,9 @@ command = "./scripts/testVariableScript.ps1"
 
 ```
 
-### Variable Sources
+### Setting Variables
 * Setting a constant value on its `value` property
-* Some other request, extracted from its response via a [jpath](https://tools.ietf.org/id/draft-goessner-dispatch-jsonpath-00.html#section-1.3)
+* Some other request `source`, extracted from its response via a [jpath](https://tools.ietf.org/id/draft-goessner-dispatch-jsonpath-00.html#section-1.3)
 * An external program or script by using `command` and optionally `command_args`
 * the contents of a file by using `file`
 * an environment variable by using `env`

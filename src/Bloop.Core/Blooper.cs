@@ -102,7 +102,7 @@ public class Blooper
                     continue;
                 }
 
-                if (variable.Jpath != null)
+                if (variable.Jpath != null && variable.Source != null)
                 {
                     var response = await SendRequest(config, variable.Source);
                     if (response.Unwrap() is Error e)

@@ -27,7 +27,7 @@ public class Request
 
 public class Variable
 {
-    public string Source { get; set; } = "";
+    public string? Source { get; set; }
     public string? Value { get; set; }
     public string? Jpath { get; set; }
     public string? Command { get; set; }
@@ -37,7 +37,8 @@ public class Variable
 
     public override string ToString()
     {
-        var s = $"{{ Source: {Source}";
+        var s = "{ ";
+        s = ModelHelper.AppendIfValue(s, () => Source);
         s = ModelHelper.AppendIfValue(s, () => Value);
         s = ModelHelper.AppendIfValue(s, () => Jpath);
         s = ModelHelper.AppendIfValue(s, () => Command);
@@ -56,7 +57,7 @@ public class ModelHelper
         var value = expression.Compile()();
         if (value != null)
         {
-            s += $", {(expression.Body as MemberExpression)?.Member?.Name}: {value}";
+            s += $"{(s.Contains(":") ? "," : "")} {(expression.Body as MemberExpression)?.Member?.Name}: {value}";
         }
         return s;
     }
