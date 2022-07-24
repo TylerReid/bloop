@@ -8,8 +8,17 @@ function Assert($expected, $actual) {
 
 Write-Host "Starting test server"
 $testJob = Start-Job -FilePath ./scripts/runTestServer.ps1
-# todo wait until port is in use?
-Start-Sleep -Seconds 3
+$waitCount = 0
+while (-not (Test-Connection -TargetName localhost -TcpPort 5284))
+{
+    if ($waitCount -gt 10)
+    {
+        throw "server is taking too long to start, check output from ./scripts/runTestServer.ps1"
+    }
+    Start-Sleep -MilliSeconds 500
+    $waitCount = $waitCount + 1
+}
+
 Write-Host "Beginning tests"
 
 Set-Location $PSScriptRoot
