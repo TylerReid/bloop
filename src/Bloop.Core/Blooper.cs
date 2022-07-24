@@ -14,7 +14,7 @@ public class Blooper
 
     public async Task<Either<HttpResponseMessage, Error>> SendRequest(Config config, Request request)
     {
-        var maybeError = await SatisfyVariables(config, request);
+        var maybeError = await VariableHandler.SatisfyVariables(this, config, request);
         if (maybeError.Unwrap() is Error e)
         {
             return e;
@@ -86,69 +86,5 @@ public class Blooper
             return new Error($"no request found with name `{requestName}` in config");
         }
         return request;
-    }
-
-    public async Task<Either<Unit, Error>> SatisfyVariables(Config config, Request request)
-    {
-        //todo document why this works
-        //todo infinite loop protection?
-        var variables = VariableHandler.GetVariables(request);
-        foreach (var v in variables)
-        {
-            if (config.Variable.TryGetValue(v, out var variable))
-            {
-                if (variable.Value != null)
-                {
-                    continue;
-                }
-
-                if (variable.Jpath != null && variable.Source != null)
-                {
-                    var response = await SendRequest(config, variable.Source);
-                    if (response.Unwrap() is Error e)
-                    {
-                        return e;
-                    }
-                    continue;
-                }
-
-                if (variable.Command != null)
-                {
-                    var commandResult = await VariableHandler.RunCommand(variable);
-                    if (commandResult.Unwrap() is Error e)
-                    {
-                        return e;
-                    }
-                    continue;
-                }
-
-                if (variable.File != null)
-                {
-                    try
-                    {
-                        variable.Value = await File.ReadAllTextAsync(variable.File);
-                        continue;
-                    }
-                    catch (Exception e)
-                    {
-                        return new Error($"error loading variable from file {variable.File}: {e.Message}");
-                    }
-                }
-
-                if (variable.Env != null)
-                {
-                    variable.Value = Environment.GetEnvironmentVariable(variable.Env);
-                    continue;
-                }
-
-                return new Error($"variable {v} does not have a value, file, jpath, or command defined");
-            }
-            else
-            {
-                return new Error($"variable {v} is used in request {request.Uri} but is not defined as a variable");
-            }
-        }
-
-        return Unit.Instance;
     }
 }

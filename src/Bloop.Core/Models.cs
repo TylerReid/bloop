@@ -49,7 +49,7 @@ public class Variable
     }
 }
 
-public class ModelHelper
+internal class ModelHelper
 {
     // this is dumb but fun
     public static string AppendIfValue(string s, Expression<Func<object?>> expression)

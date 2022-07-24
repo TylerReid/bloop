@@ -75,4 +75,68 @@ public class VariableHandler
             return new Error($"error running variable command: {e.Message}");
         }
     }
+
+    public static async Task<Either<Unit, Error>> SatisfyVariables(Blooper blooper, Config config, Request request)
+    {
+        //todo document why this works
+        //todo infinite loop protection?
+        var variables = GetVariables(request);
+        foreach (var v in variables)
+        {
+            if (config.Variable.TryGetValue(v, out var variable))
+            {
+                if (variable.Value != null)
+                {
+                    continue;
+                }
+
+                if (variable.Jpath != null && variable.Source != null)
+                {
+                    var response = await blooper.SendRequest(config, variable.Source);
+                    if (response.Unwrap() is Error e)
+                    {
+                        return e;
+                    }
+                    continue;
+                }
+
+                if (variable.Command != null)
+                {
+                    var commandResult = await RunCommand(variable);
+                    if (commandResult.Unwrap() is Error e)
+                    {
+                        return e;
+                    }
+                    continue;
+                }
+
+                if (variable.File != null)
+                {
+                    try
+                    {
+                        variable.Value = await File.ReadAllTextAsync(variable.File);
+                        continue;
+                    }
+                    catch (Exception e)
+                    {
+                        return new Error($"error loading variable from file {variable.File}: {e.Message}");
+                    }
+                }
+
+                if (variable.Env != null)
+                {
+                    variable.Value = Environment.GetEnvironmentVariable(variable.Env);
+                    continue;
+                }
+
+                return new Error($"variable {v} does not have a value, file, jpath, or command defined");
+            }
+            else
+            {
+                return new Error($"variable {v} is used in request {request.Uri} but is not defined as a variable");
+            }
+        }
+
+        return Unit.Instance;
+    }
 }

@@ -5,7 +5,6 @@ namespace Bloop.Core;
 
 public class ConfigLoader
 {
-
     public static async Task<Either<Config, Error>> LoadConfigAsync(string path)
     {
         try
