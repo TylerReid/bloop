@@ -5,9 +5,6 @@ body = "{}"
 content_type = "application/json"
 headers = { Authorization = "Bearer bloop" }
 
-[request.bloop]
-uri = "https://localhost"
-
 [request.google]
 uri = "https://www.google.com"
 
@@ -15,10 +12,10 @@ uri = "https://www.google.com"
 uri = "https://stackoverflow.com/api/recent-chat"
 
 [request.testforecast]
-uri = "https://localhost:7284/weatherforecast"
+uri = "http://localhost:5284/weatherforecast"
 
 [request.echo]
-uri = "https://localhost:7284/echo"
+uri = "http://localhost:5284/echo"
 headers = { X-Derp = "${activeUsers} ${yep}" }
 
 [request.echoquery]

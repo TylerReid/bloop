@@ -79,5 +79,5 @@ command = "./scripts/testVariableScript.ps1"
 Bloop requires [the latest .net](https://dotnet.microsoft.com/en-us/download) for the main application, and [powershell](https://github.com/PowerShell/PowerShell) for scripts and tests
 
 To build: `dotnet build`
-**Linux only** To build in release mode and place the output at `/usr/local/bin/bloop`: `./scripts/buildCli.sh`
+To produce release mode outputs in the `./releases/` directory: `./scripts/buildCli.ps1`
 To run integration tests: `./tests/IntegrationTests/runTests.ps1`
