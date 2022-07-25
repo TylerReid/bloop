@@ -80,6 +80,22 @@ public class Program
             return 1;
         }
 
+        var config = configLoad.UnwrapSuccess();
+
+        foreach (var optionVar in options.Variables ?? Enumerable.Empty<string>())
+        {
+            var split = optionVar.Split('=');
+            if (split?.Count() != 2)
+            {
+                Console.WriteLine($"invalid variable: {optionVar}\nexpected variables to be in the form of someKey=SomeValue");
+                return 1;
+            }
+            if (config.Variable.ContainsKey(split[0]))
+            {
+                config.Variable[split[0]].Value = split[1];
+            }
+        }
+
         var insecureHandler = new HttpClientHandler();
         insecureHandler.ServerCertificateCustomValidationCallback = (a, b, c, d) => true;
         var client = options.Insecure
@@ -87,7 +103,7 @@ public class Program
             : new HttpClient();
         var blooper = new Blooper(client);
 
-        var response = await blooper.SendRequest(configLoad.UnwrapSuccess(), options.RequestName);
+        var response = await blooper.SendRequest(config, options.RequestName);
 
         return await response.MatchAsync<int>(
             async r => {

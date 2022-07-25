@@ -24,6 +24,11 @@ uri = "http://localhost:5284/echo/query?something=${activeUsers}"
 [request.echocommand]
 uri = "http://localhost:5284/echo/query?something=${command}"
 
+[request.echoform]
+uri = "http://localhost:5284/echo/form"
+method = "Post"
+form = { SomeFormKey = "Some Form Value", Test = "${activeUsers}" }
+
 [variable.yep]
 source = "florp"
 jpath = "$.headers.Host[0]"

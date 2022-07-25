@@ -31,4 +31,11 @@ public class EchoController : ControllerBase
     {
         return Ok(something);
     }
+
+    [HttpPost]
+    [Route("form")]
+    public IActionResult Echo([FromForm]Dictionary<string, string> form)
+    {
+        return Ok(form);
+    }
 }

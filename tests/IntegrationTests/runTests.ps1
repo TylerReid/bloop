@@ -68,4 +68,16 @@ Write-Host $echo
 
 Assert "hello from powershell" $echo
 
+$echo = bloop env --var env=wow
+Write-Host "`nbloop request output:"
+Write-Host $echo
+
+Assert "wow" $echo
+
+$echo = bloop echoform --var 'env=something cool'
+Write-Host "`nbloop request output:"
+Write-Host $echo
+
+Assert "{   `"SomeFormKey`": `"Some Form Value`",   `"Test`": `"something cool`" }" $echo
+
 $testJob | Stop-Job

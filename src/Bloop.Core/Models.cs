@@ -14,6 +14,7 @@ public class Request
     public HttpMethod Method { get; set; } = HttpMethod.Get;
     public string? Body { get; set; }
     public string? ContentType { get; set; }
+    public Dictionary<string, string>? Form { get; set; }
     public Dictionary<string, string> Headers { get; set;} = new();
 
     public override string ToString() => ModelHelper.ToString(this);

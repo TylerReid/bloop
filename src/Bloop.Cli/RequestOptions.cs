@@ -15,6 +15,8 @@ public class RequestOptions
     public string ConfigPath { get; set; } = "bloop.toml";
     [Option('i', "insecure", Default = false, HelpText = "disables certificate validation")]
     public bool Insecure { get; set; } = false;
+    [Option("var", HelpText = "variables provided in a `key=value,key2=value2` format", Separator = ',')]
+    public IEnumerable<string>? Variables { get; set; }
 }
 
 [Verb("list", HelpText = "list requests and variables")]
