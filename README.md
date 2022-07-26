@@ -4,32 +4,6 @@ Bloops things! A postman alternative that uses [TOML](https://toml.io) as a conf
 ## Usage
 
 ```console
-$ bloop --help
-  request    (Default Verb)
-
-  list       list requests and variables
-
-  help       Display more information on a specific command.
-
-  version    Display version information.
-
-$ bloop request --help
-  --prettyprint        (Default: true)
-
-  -v, --verbose        (Default: false)
-
-  -c, --config-path    (Default: bloop.toml)
-
-  -i, --insecure       (Default: false) disables certificate validation
-
-  --help               Display this help screen.
-
-  --version            Display version information.
-
-  request (pos. 0)     name of the request to send
-```
-
-```console
 $ bloop list
 requests:
 somejson:       { Uri: https://stackoverflow.com/api/recent-chat, Method: GET }
@@ -37,8 +11,9 @@ echoquery:      { Uri: http://localhost:5284/echo/query?something=${activeUsers}
 
 variables:
 activeUsers:    { Source: somejson, Jpath: $.activeUsers }
-
-$ bloop echoquery -v
+```
+```console
+$ bloop echoquery --verbose
 Request Uri: http://localhost:5284/echo/query?something=42
 Status: OK
 
@@ -55,9 +30,28 @@ body = "{}"
 content_type = "application/json"
 headers = { Authorization = "Bearer ${command}" }
 ```
+### Properties
+#### uri
+  * can contain variables
+  * default is `http://localhost`
+#### method
+  * default is `GET`
+#### body
+  * can contain variables
+  * optional request body
+#### content_type
+  * optional content type
+  * only used if `body` is set
+#### form
+  * values can contain variables
+  * optional key value pairs to be used in `application/x-www-form-urlencoded` content
+  * if set `body` will not be used
+#### headers
+  * values can contain variables
+  * optional key value pairs to be sent as headers
 
 ## Variables
-Variables can be used in request header values, bodies, and the uri by using `${someVariableName}` inside of the definition.
+Variables can be used in request header values, bodies, and the uri by using `${someVariableName}` inside of the definition. Values come from various sources defined in the properties or passed to the cli with `--var someKey=value,otherKey=derp`
 ```toml
 [variable.activeUsers]
 source = "somejson"
@@ -65,16 +59,26 @@ jpath = "$.activeUsers"
 
 [variable.command]
 command = "./scripts/testVariableScript.ps1"
-
 ```
 
-### Setting Variables
-* Setting a constant value on its `value` property
-* Some other request `source`, extracted from its response via a [jpath](https://tools.ietf.org/id/draft-goessner-dispatch-jsonpath-00.html#section-1.3)
-* An external program or script by using `command` and optionally `command_args`
-* the contents of a file by using `file`
-* an environment variable by using `env`
-* passed to the cli with `--var someKey=value,otherKey=derp`
+### Properties
+#### value
+  * constant literal value for a variable
+#### jpath
+  * a [jpath](https://tools.ietf.org/id/draft-goessner-dispatch-jsonpath-00.html#section-1.3) used to extract values from the reponse of `source`
+  * `source` is required if this is set
+#### source
+  * the request name that will be used to extract values
+  * `jpath` is required if this is set
+#### command
+  * executable or script to run
+  * the entire stdout is used as the variable value if the command exits successfully
+#### command_args
+  * optional arguments to pass to a `command`
+#### file
+  * read the contents of a file
+#### env
+  * environment variables
 
 ## Dev and Build
 Bloop requires [the latest .net](https://dotnet.microsoft.com/en-us/download) for the main application, and [powershell](https://github.com/PowerShell/PowerShell) for scripts and tests
