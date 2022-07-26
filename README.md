@@ -25,10 +25,13 @@ Named http requests to make
 ```toml
 [request.florp]
 uri = "http://localhost:5284/echo"
-method = "Get"
+method = "POST"
 body = "{}"
 content_type = "application/json"
-headers = { Authorization = "Bearer ${command}" }
+headers = { Authorization = "Bearer ${mySuperSecretToken}" }
+
+[request.somejson]
+uri = "https://stackoverflow.com/api/recent-chat"
 ```
 ### Properties
 #### uri
