@@ -1,5 +1,9 @@
 #!/usr/bin/env pwsh
 
+param (
+    [switch]$buildSelfContained
+)
+
 function Build($includeRuntime, $path) {
     $targets = @("linux-x64", "win-x64", "osx-x64")
     foreach ($target in $targets)
@@ -12,4 +16,7 @@ function Build($includeRuntime, $path) {
 }
 
 Build '--no-self-contained' 'smol'
-Build '--self-contained' 'big'
+
+if ($buildSelfContained) {
+    Build '--self-contained' 'big'
+}

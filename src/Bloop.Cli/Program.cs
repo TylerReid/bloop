@@ -10,7 +10,7 @@ public class Program
 {
     public static async Task<int> Main(string[] args)
     {
-        var parseObject = CommandLine.Parser.Default.ParseArguments<RequestOptions, ListOptions>(args);
+        var parseObject = CommandLine.Parser.Default.ParseArguments<RequestOptions, ListOptions, ValidateOptions>(args);
         var parsedArgs = parseObject as Parsed<object>;
         if (parsedArgs == null)
         {
@@ -24,7 +24,12 @@ public class Program
 
         if (parsedArgs.Value is ListOptions list)
         {
-            return await Run(list);
+            return await List(list);
+        }
+
+        if (parsedArgs.Value is ValidateOptions validate)
+        {
+            return await Validate(validate);
         }
 
         Console.WriteLine("something bad happened, and we got these parsed types for cli options:");
@@ -34,7 +39,25 @@ public class Program
         return 1;
     }
 
-    private static async Task<int> Run(ListOptions options)
+    private static async Task<int> Validate(ValidateOptions options)
+    {
+        var configLoad = await ConfigLoader.LoadConfigAsync(options.ConfigPath);
+        if (configLoad.Unwrap() is Error error)
+        {
+            Console.WriteLine(error.Message);
+            return 1;
+        }
+
+        var config = configLoad.UnwrapSuccess();
+        var failures = Validator.Validate(config);
+        foreach (var failure in failures)
+        {
+            Console.WriteLine(failure.Message);
+        }
+        return failures.Any() ? 1 : 0;
+    }
+
+    private static async Task<int> List(ListOptions options)
     {
         var configLoad = await ConfigLoader.LoadConfigAsync(options.ConfigPath);
 

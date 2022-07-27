@@ -1,0 +1,3 @@
+[variable.bad]
+file = "file.jpg"
+command = "file.exe"

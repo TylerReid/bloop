@@ -27,6 +27,18 @@ while (-not (Test-Connection -TargetName localhost -TcpPort 5284))
 
 Write-Host "Beginning tests"
 
+$validate = bloop validate
+Write-Host "`nbloop validate output:"
+Write-Host $validate
+
+Assert $null $validate
+
+$validate = bloop validate -c bad.toml
+Write-Host "`nbloop validate output:"
+Write-Host $validate
+
+Assert "variable ``bad`` has too many properies defined" $validate
+
 $list = bloop list
 Write-Host "`nbloop list output:"
 Write-Host $list

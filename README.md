@@ -19,6 +19,10 @@ Status: OK
 
 42
 ```
+```console
+$ bloop validate
+variable ${token} is used in `getaccount` but is not defined as a variable
+```
 
 ## Requests
 Named http requests to make

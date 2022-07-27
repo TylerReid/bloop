@@ -27,3 +27,10 @@ public class ListOptions
     [Option('c', "config-path", Default = "bloop.toml")]
     public string ConfigPath { get; set; } = "bloop.toml";
 }
+
+[Verb("validate", HelpText = "validate configuration")]
+public class ValidateOptions
+{
+    [Option('c', "config-path", Default = "bloop.toml")]
+    public string ConfigPath { get; set; } = "bloop.toml";
+}
