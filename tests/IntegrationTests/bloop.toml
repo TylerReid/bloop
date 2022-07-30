@@ -39,3 +39,6 @@ command = "scriptSource.ps1"
 uri = "http://localhost:5284/echo/form"
 method = "Post"
 form = { SomeFormKey = "Some Form Value", Test = "${env}" }
+
+[request.echoarray]
+uri = "http://localhost:5284/echo/array?value=derp"

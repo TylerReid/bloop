@@ -1,5 +1,10 @@
 #!/usr/bin/env pwsh
 
+function Assert-Json($expected, $actual) {
+    # this is to make all whitespace the same, kind of dumb
+    Assert ($expected | ConvertFrom-Json | ConvertTo-Json) ($actual | ConvertFrom-Json | ConvertTo-Json)
+}
+
 function Assert($expected, $actual) {
     if ($expected -ne $actual) {
         throw "Expected $expected but got $actual"
@@ -81,15 +86,22 @@ Write-Host $echo
 Assert "hello from powershell" $echo
 
 $echo = bloop env --var env=wow
-Write-Host "`nbloop request output:"
+Write-Host "`nbloop env output:"
 Write-Host $echo
 
 Assert "wow" $echo
 
 $echo = bloop echoform --var 'env=something cool'
-Write-Host "`nbloop request output:"
+Write-Host "`nbloop env cli param output:"
 Write-Host $echo
 
-Assert "{   `"SomeFormKey`": `"Some Form Value`",   `"Test`": `"something cool`" }" $echo
+Assert-Json "{`"SomeFormKey`": `"Some Form Value`", `"Test`": `"something cool`"}" $echo
+
+$echo = bloop echoarray
+Write-Host "`nbloop array output:"
+Write-Host $echo
+
+Assert-Json "[{`"value`": `"derp`"}, {`"value`": `"derp`"}, {`"value`": `"derp`"}]" $echo
+
 
 $testJob | Stop-Job

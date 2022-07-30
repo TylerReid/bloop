@@ -38,4 +38,15 @@ public class EchoController : ControllerBase
     {
         return Ok(form);
     }
+
+    [HttpGet]
+    [Route("array")]
+    public IActionResult EchoArray([FromQuery]string value)
+    {
+        return Ok(new[] {
+            new { value },
+            new { value },
+            new { value },
+        });
+    }
 }

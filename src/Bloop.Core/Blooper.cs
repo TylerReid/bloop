@@ -60,7 +60,7 @@ public class Blooper
             //maybe support xpath or like direct body response to var?
             if (response.Content?.Headers?.ContentType?.MediaType == "application/json")
             {
-                var json = JObject.Parse(content);
+                var json = JToken.Parse(content);
                 foreach (var (_, variable) in variables)
                 {
                     if (variable.Jpath == null)
