@@ -1,0 +1,2 @@
+[request.modulejson]
+uri = "https://stackoverflow.com/api/recent-chat"

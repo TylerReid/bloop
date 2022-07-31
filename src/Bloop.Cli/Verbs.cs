@@ -11,8 +11,8 @@ public class RequestOptions
     public bool PrettyPrint { get; set; } = true;
     [Option('v', "verbose", Default = false)]
     public bool Verbose { get; set; } = false;
-    [Option('c', "config-path", Default = "bloop.toml")]
-    public string ConfigPath { get; set; } = "bloop.toml";
+    [Option('c', "config-path", HelpText = "directory or file to load configs from")]
+    public string? ConfigPath { get; set; }
     [Option('i', "insecure", Default = false, HelpText = "disables certificate validation")]
     public bool Insecure { get; set; } = false;
     [Option("var", HelpText = "variables provided in a `key=value,key2=value2` format", Separator = ',')]
@@ -24,8 +24,8 @@ public class ListOptions
 {
     [Value(0, MetaName = "type", HelpText = "type of resource to list")]
     public string Type { get; set; } = "all";
-    [Option('c', "config-path", Default = "bloop.toml")]
-    public string ConfigPath { get; set; } = "bloop.toml";
+    [Option('c', "config-path", HelpText = "directory or file to load configs from")]
+    public string? ConfigPath { get; set; }
 }
 
 [Verb("validate", HelpText = "validate configuration")]

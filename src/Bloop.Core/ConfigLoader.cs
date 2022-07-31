@@ -1,3 +1,4 @@
+using System.Text;
 using Tomlyn;
 
 namespace Bloop.Core;
@@ -8,7 +9,21 @@ public class ConfigLoader
     {
         try
         {
-            var content = await File.ReadAllTextAsync(path);
+            string content;
+            if (Directory.Exists(path))
+            {
+                var combinedText = new StringBuilder();
+                foreach (var file in Directory.EnumerateFiles(path, "*.toml"))
+                {
+                    combinedText.AppendLine(await File.ReadAllTextAsync(file));
+                }
+                content = combinedText.ToString();
+            }
+            else
+            {
+                content = await File.ReadAllTextAsync(path);
+            }
+            
             return Toml.ToModel<Config>(content, options: new TomlModelOptions
             {
                 IgnoreMissingProperties = true,

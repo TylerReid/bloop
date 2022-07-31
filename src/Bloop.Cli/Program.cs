@@ -59,7 +59,7 @@ public class Program
 
     private static async Task<int> List(ListOptions options)
     {
-        var configLoad = await ConfigLoader.LoadConfigAsync(options.ConfigPath);
+        var configLoad = await ConfigLoader.LoadConfigAsync(options.ConfigPath ?? Environment.CurrentDirectory);
 
         return configLoad.Match(
             config => {
@@ -95,7 +95,7 @@ public class Program
 
     private static async Task<int> Run(RequestOptions options)
     {
-        var configLoad = await ConfigLoader.LoadConfigAsync(options.ConfigPath);
+        var configLoad = await ConfigLoader.LoadConfigAsync(options.ConfigPath ?? Environment.CurrentDirectory);
 
         if (configLoad.Unwrap() is Error error)
         {

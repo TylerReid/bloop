@@ -38,7 +38,7 @@ Write-Host $validate
 
 Assert $null $validate
 
-$validate = bloop validate -c bad.toml
+$validate = bloop validate -c ./bad/bad.toml
 Write-Host "`nbloop validate output:"
 Write-Host $validate
 
@@ -50,6 +50,12 @@ Write-Host $list
 
 $echo = bloop echoquery
 Write-Host "`nbloop request output:"
+Write-Host $echo
+
+Assert "intgtest" $echo
+
+$echo = bloop secondfile
+Write-Host "`nbloop secondfile output:"
 Write-Host $echo
 
 Assert "intgtest" $echo
