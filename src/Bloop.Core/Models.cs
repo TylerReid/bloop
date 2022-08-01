@@ -6,6 +6,7 @@ public class Config
 {
     public Dictionary<string, Request> Request { get; set; } = new();
     public Dictionary<string, Variable> Variable { get; set; } = new();
+    public Defaults Defaults { get; set; } = new();
 }
 
 public class Request
@@ -32,6 +33,11 @@ public class Variable
     public string? Default { get; set; }
 
     public override string ToString() => ModelHelper.ToString(this);
+}
+
+public class Defaults
+{
+    public Dictionary<string, string> Headers { get; set; } = new();
 }
 
 internal class ModelHelper

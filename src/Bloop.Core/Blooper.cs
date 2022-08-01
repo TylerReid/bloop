@@ -27,6 +27,14 @@ public class Blooper
             httpRequest.Headers.TryAddWithoutValidation(name, VariableHandler.ExpandVariables(value, config));
         }
 
+        foreach (var (name, value) in config.Defaults.Headers)
+        {
+            if (!httpRequest.Headers.Any(x => x.Key == name))
+            {
+                httpRequest.Headers.TryAddWithoutValidation(name, VariableHandler.ExpandVariables(value, config));
+            }
+        }
+
         if (request.Form != null)
         {
             var form = new Dictionary<string, string>();

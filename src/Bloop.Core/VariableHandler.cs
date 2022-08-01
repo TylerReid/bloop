@@ -13,7 +13,8 @@ public class VariableHandler
         .Distinct()
         .ToList();
 
-    public static List<string> GetVariables(Request request) => request.Headers.Values.SelectMany(GetVariables)
+    public static List<string> GetVariables(Defaults defaults, Request request) => request.Headers.Values.SelectMany(GetVariables)
+        .Concat(defaults.Headers.Values.SelectMany(GetVariables))
         .Concat(GetVariables(request.Body ?? ""))
         .Concat(GetVariables(request.Uri))
         .Concat(request.Form?.Values.SelectMany(GetVariables) ?? Enumerable.Empty<string>())
@@ -81,7 +82,7 @@ public class VariableHandler
     {
         //todo document why this works
         //todo infinite loop protection?
-        var variables = GetVariables(request);
+        var variables = GetVariables(config.Defaults, request);
         foreach (var v in variables)
         {
             if (config.Variable.TryGetValue(v, out var variable))
@@ -93,6 +94,12 @@ public class VariableHandler
 
                 if (variable.Jpath != null && variable.Source != null)
                 {
+                    // if the source is this request, don't bloop because that will cause infinite loop
+                    // one legitamate way to end up in this scenario is with default headers
+                    if (config.Request.Single(x => x.Value == request).Key == variable.Source)
+                    {
+                        continue;
+                    }
                     var response = await blooper.SendRequest(config, variable.Source);
                     if (response.Unwrap() is Error e)
                     {

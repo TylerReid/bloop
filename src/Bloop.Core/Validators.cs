@@ -38,7 +38,7 @@ public class Validator
     {
         foreach (var (name, request) in config.Request)
         {
-            var variables = VariableHandler.GetVariables(request);
+            var variables = VariableHandler.GetVariables(config.Defaults, request);
             foreach (var variable in variables)
             {
                 if (!config.Variable.ContainsKey(variable))

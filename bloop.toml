@@ -39,3 +39,6 @@ jpath = "$.activeUsers"
 
 [variable.command]
 command = "./scripts/testVariableScript.ps1"
+
+[defaults]
+headers = { X-Bloop = "${yep}" }
