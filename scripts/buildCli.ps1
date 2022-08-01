@@ -1,7 +1,8 @@
 #!/usr/bin/env pwsh
 
 param (
-    [switch]$buildSelfContained
+    [switch]$buildSelfContained,
+    [switch]$skipResultCopy
 )
 
 function Build($includeRuntime, $path) {
@@ -19,4 +20,13 @@ Build '--no-self-contained' 'smol'
 
 if ($buildSelfContained) {
     Build '--self-contained' 'big'
+}
+
+if (!$skipResultCopy) {
+    if ($IsLinux) {
+        . "$PSScriptRoot/copyCli.sh" 'smol/linux-x64'
+    }
+    if ($IsMacOs) {
+        . "$PSScriptRoot/copyCli.sh" 'smol/osx-x64'
+    }
 }
