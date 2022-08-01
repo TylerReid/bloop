@@ -111,6 +111,15 @@ public class VariableHandler
                     continue;
                 }
 
+                if (variable.Env != null)
+                {
+                    variable.Value = Environment.GetEnvironmentVariable(variable.Env);
+                    if (variable.Value != null)
+                    {
+                        continue;
+                    }
+                }
+
                 if (variable.File != null)
                 {
                     try
@@ -118,15 +127,19 @@ public class VariableHandler
                         variable.Value = await File.ReadAllTextAsync(variable.File);
                         continue;
                     }
-                    catch (Exception e)
+                    catch (Exception e) when (variable.Default == null)
                     {
                         return new Error($"error loading variable from file {variable.File}: {e.Message}");
                     }
+                    catch (FileNotFoundException)
+                    {
+                        //ignore because we have a default
+                    }
                 }
 
-                if (variable.Env != null)
+                if (variable.Default != null)
                 {
-                    variable.Value = Environment.GetEnvironmentVariable(variable.Env);
+                    variable.Value = variable.Default;
                     continue;
                 }
 

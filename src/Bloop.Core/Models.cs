@@ -29,6 +29,7 @@ public class Variable
     public string? CommandArgs { get; set; }
     public string? File { get; set; }
     public string? Env { get; set; }
+    public string? Default { get; set; }
 
     public override string ToString() => ModelHelper.ToString(this);
 }

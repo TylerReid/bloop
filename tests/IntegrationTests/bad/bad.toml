@@ -1,3 +1,2 @@
 [variable.bad]
-file = "file.jpg"
-command = "file.exe"
+jpath = "$.derp"

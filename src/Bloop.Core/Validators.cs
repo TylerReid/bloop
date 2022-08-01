@@ -75,23 +75,6 @@ public class Validator
             {
                 errors.Add(new Error($"variable `{name}` has `command_args` set, but is missing a `command`"));
             }
-
-            var numberOfSourceProperties = 
-                (hasJpath ? 1 : 0) + 
-                (hasCommand ? 1 : 0) +
-                (hasFile ? 1 : 0) +
-                (hasEnv ? 1 : 0) +
-                (hasValue ? 1 : 0);
-
-            if (numberOfSourceProperties == 0)
-            {
-                errors.Add(new Error($"variable `{name}` has no properties defined"));
-            }
-
-            if (numberOfSourceProperties > 1)
-            {
-                errors.Add(new Error($"variable `{name}` has too many properies defined"));
-            }
         }
     }
 }

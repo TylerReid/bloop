@@ -42,7 +42,7 @@ $validate = bloop validate -c ./bad/bad.toml
 Write-Host "`nbloop validate output:"
 Write-Host $validate
 
-Assert "variable ``bad`` has too many properies defined" $validate
+Assert "variable ``bad`` has a ``jpath`` set, but is missing a ``source``" $validate
 
 $list = bloop list
 Write-Host "`nbloop list output:"
@@ -108,6 +108,24 @@ Write-Host "`nbloop array output:"
 Write-Host $echo
 
 Assert-Json "[{`"value`": `"derp`"}, {`"value`": `"derp`"}, {`"value`": `"derp`"}]" $echo
+
+$echo = bloop envfallbackfile
+Write-Host "`nbloop env fallback to file output:"
+Write-Host $echo
+
+Assert "blorp" $echo
+
+$echo = bloop envfallback
+Write-Host "`nbloop has env and file output:"
+Write-Host $echo
+
+Assert "blooooooop" $echo
+
+$echo = bloop 'default'
+Write-Host "`nbloop default output:"
+Write-Host $echo
+
+Assert "this is a default value" $echo
 
 
 $testJob | Stop-Job
