@@ -66,7 +66,7 @@ public class Program
                 if ("all".StartsWith(options.Type) || "requests".StartsWith(options.Type))
                 {
                     Console.WriteLine("requests:");
-                    foreach (var (name, request) in config!.Request)
+                    foreach (var (name, request) in config.Request)
                     {
                         Console.WriteLine($"{name}:\t{request}");
                     }
@@ -77,11 +77,24 @@ public class Program
                 if ("all".StartsWith(options.Type) || "variables".StartsWith(options.Type))
                 {
                     Console.WriteLine("variables:");
-                    foreach (var (name, variable) in config!.Variable)
+                    foreach (var (name, variable) in config.Variable)
                     {
                         Console.WriteLine($"{name}:\t{variable}");
                     }
                     Console.WriteLine();
+                }
+
+                if ("all".StartsWith(options.Type) || "defaults".StartsWith(options.Type))
+                {
+                    if (config.Defaults.Headers.Any())
+                    {
+                        Console.WriteLine("default headers:");
+                        foreach (var (name, value) in config.Defaults.Headers)
+                        {
+                            Console.WriteLine($"{name}: {value}");
+                        }
+                        Console.WriteLine();
+                    }
                 }
 
                 return 0;

@@ -87,6 +87,13 @@ command = "./scripts/testVariableScript.ps1"
 #### env
   * environment variables
 
+## Default values
+```toml
+[defaults]
+headers = { X-Bloop = "${yep}" }
+```
+Header values that will be added to every request if not already specified
+
 ## Dev and Build
 Bloop requires [the latest .net](https://dotnet.microsoft.com/en-us/download) for the main application, and [powershell](https://github.com/PowerShell/PowerShell) for scripts and tests
 
