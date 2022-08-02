@@ -51,7 +51,7 @@ public class Blooper
             httpRequest.Content = new StringContent(
                 VariableHandler.ExpandVariables(request.Body, config), 
                 System.Text.Encoding.UTF8, 
-                request.ContentType
+                request.ContentType ?? "application/json"
             );
         }
 
