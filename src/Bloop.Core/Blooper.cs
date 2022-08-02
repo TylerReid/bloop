@@ -55,11 +55,17 @@ public class Blooper
             );
         }
 
-        var response = await _client.SendAsync(httpRequest);
-
+        HttpResponseMessage response;
+        try
+        {
+            response = await _client.SendAsync(httpRequest);
+        }
+        catch (Exception ex)
+        {
+            return new Error(ex.Message);
+        }
         var content = await response.Content.ReadAsStringAsync();
 
-        
         if (response.IsSuccessStatusCode)
         {
             var requestName = config.Request.Single(x => x.Value == request).Key;

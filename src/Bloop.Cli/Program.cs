@@ -17,6 +17,14 @@ public class Program
             return 1;
         }
 
+        if (parsedArgs.Value is BaseOptions baseOptions)
+        {
+            if (baseOptions.NoColor)
+            {
+                Output.WriteColors = false;
+            }
+        }
+
         if (parsedArgs.Value is RequestOptions request)
         {
             return await Run(request);
@@ -32,19 +40,19 @@ public class Program
             return await Validate(validate);
         }
 
-        Console.WriteLine("something bad happened, and we got these parsed types for cli options:");
-        Console.WriteLine(parsedArgs.GetType());
-        Console.WriteLine(parsedArgs.Value.GetType());
+        Output.WriteError("something bad happened, and we got these parsed types for cli options:");
+        Output.WriteLine(parsedArgs.GetType());
+        Output.WriteLine(parsedArgs.Value.GetType());
 
         return 1;
     }
 
     private static async Task<int> Validate(ValidateOptions options)
     {
-        var configLoad = await ConfigLoader.LoadConfigAsync(options.ConfigPath);
+        var configLoad = await ConfigLoader.LoadConfigAsync(options.ConfigPath ?? Environment.CurrentDirectory);
         if (configLoad.Unwrap() is Error error)
         {
-            Console.WriteLine(error.Message);
+            Output.WriteError(error.Message);
             return 1;
         }
 
@@ -52,7 +60,7 @@ public class Program
         var failures = Validator.Validate(config);
         foreach (var failure in failures)
         {
-            Console.WriteLine(failure.Message);
+            Output.WriteError(failure.Message);
         }
         return failures.Any() ? 1 : 0;
     }
@@ -65,42 +73,45 @@ public class Program
             config => {
                 if ("all".StartsWith(options.Type) || "requests".StartsWith(options.Type))
                 {
-                    Console.WriteLine("requests:");
+                    Output.WriteLine("requests:", ConsoleColor.Green);
                     foreach (var (name, request) in config.Request)
                     {
-                        Console.WriteLine($"{name}:\t{request}");
+                        Output.Write($"{name}:\t", ConsoleColor.White);
+                        Output.WriteLine($"{request}");
                     }
-                    Console.WriteLine();
+                    Output.WriteLine();
                 }
                 
 
                 if ("all".StartsWith(options.Type) || "variables".StartsWith(options.Type))
                 {
-                    Console.WriteLine("variables:");
+                    Output.WriteLine("variables:", ConsoleColor.Green);
                     foreach (var (name, variable) in config.Variable)
                     {
-                        Console.WriteLine($"{name}:\t{variable}");
+                        Output.Write($"{name}:\t", ConsoleColor.White);
+                        Output.WriteLine($"{variable}");
                     }
-                    Console.WriteLine();
+                    Output.WriteLine();
                 }
 
                 if ("all".StartsWith(options.Type) || "defaults".StartsWith(options.Type))
                 {
                     if (config.Defaults.Headers.Any())
                     {
-                        Console.WriteLine("default headers:");
+                        Output.WriteLine("default headers:", ConsoleColor.Green);
                         foreach (var (name, value) in config.Defaults.Headers)
                         {
-                            Console.WriteLine($"{name}: {value}");
+                            Output.Write($"{name}: ", ConsoleColor.White);
+                            Output.WriteLine($"{value}");
                         }
-                        Console.WriteLine();
+                        Output.WriteLine();
                     }
                 }
 
                 return 0;
             },
             error => {
-                Console.WriteLine(error.Message);
+                Output.WriteError(error.Message);
                 return 1;
             }
         );
@@ -112,7 +123,7 @@ public class Program
 
         if (configLoad.Unwrap() is Error error)
         {
-            Console.WriteLine(error.Message);
+            Output.WriteError(error.Message);
             return 1;
         }
 
@@ -123,7 +134,7 @@ public class Program
             var split = optionVar.Split('=');
             if (split?.Count() != 2)
             {
-                Console.WriteLine($"invalid variable: {optionVar}\nexpected variables to be in the form of someKey=SomeValue");
+                Output.WriteError($"invalid variable: {optionVar}\nexpected variables to be in the form of someKey=SomeValue");
                 return 1;
             }
             if (config.Variable.ContainsKey(split[0]))
@@ -147,7 +158,7 @@ public class Program
                 return 0;
             },
             e => {
-                Console.WriteLine(e.Message);
+                Output.WriteError(e.Message);
                 return Task.FromResult(1);
             }
         );
@@ -157,9 +168,9 @@ public class Program
     {
         if (options.Verbose)
         {
-            Console.WriteLine($"Request Uri: {response.RequestMessage?.RequestUri}");
-            Console.WriteLine($"Status: {response.StatusCode}");
-            Console.WriteLine();
+            Output.WriteLine($"Request Uri: {response.RequestMessage?.RequestUri}", ConsoleColor.White);
+            Output.WriteLine($"Status: {response.StatusCode}", ConsoleColor.White);
+            Output.WriteLine();
         }
 
         var isJson = response.Content?.Headers?.ContentType?.MediaType == "application/json";
@@ -170,12 +181,12 @@ public class Program
             {
                 WriteIndented = true,
             });
-            Console.WriteLine(json);
+            Output.WriteLine(json);
         }
         else
         {
             var content = await response.Content!.ReadAsStringAsync();
-            Console.WriteLine(content);
+            Output.WriteLine(content);
         }
     }
 }
