@@ -80,8 +80,6 @@ public class VariableHandler
 
     public static async Task<Either<Unit, Error>> SatisfyVariables(Blooper blooper, Config config, Request request)
     {
-        //todo document why this works
-        //todo infinite loop protection?
         var variables = GetVariables(config.Defaults, request);
         foreach (var v in variables)
         {

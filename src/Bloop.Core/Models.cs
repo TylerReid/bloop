@@ -63,7 +63,16 @@ internal class ModelHelper
             }
             else
             {
-                sb.Append($"{comma} {property.Name}: {value}");
+                var valueString = value.ToString();
+                // if the value is too big, like a request body, don't include it in output
+                if (valueString?.Length > 100)
+                {
+                    var denewlined = valueString
+                        .Replace("\n", "")
+                        .Replace("\r", "");
+                    valueString = $"{denewlined.Substring(0, 15)}...";
+                }
+                sb.Append($"{comma} {property.Name}: {valueString}");
             }
             comma = ",";
         }

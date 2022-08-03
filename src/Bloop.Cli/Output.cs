@@ -3,16 +3,20 @@ namespace Bloop.Cli;
 
 public static class Output
 {
+    private static object _lock = new();
     public static bool WriteColors { get; set; } = !Console.IsOutputRedirected;
 
     public static void Write(string s, ConsoleColor color)
     {
         if (WriteColors)
         {
-            var oldColor = Console.ForegroundColor;
-            Console.ForegroundColor = color;
-            Console.Write(s);
-            Console.ForegroundColor = oldColor;
+            lock (_lock)
+            {
+                var oldColor = Console.ForegroundColor;
+                Console.ForegroundColor = color;
+                Console.Write(s);
+                Console.ForegroundColor = oldColor;
+            }
         }
         else
         {
