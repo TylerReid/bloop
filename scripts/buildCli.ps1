@@ -2,13 +2,13 @@
 
 param (
     [switch]$buildSelfContained,
-    [switch]$skipResultCopy
+    [switch]$skipResultCopy,
+    [switch]$buildRelease
 )
 
 function Build($includeRuntime, $path) {
     $targets = @("linux-x64", "win-x64", "osx-x64")
-    foreach ($target in $targets)
-    {
+    foreach ($target in $targets) {
         dotnet publish ./src/Bloop.Cli/Bloop.Cli.csproj --nologo `
             -r $target -c Release $includeRuntime -p:PublishSingleFile=true `
             /p:DebugType=None /p:DebugSymbols=false `
@@ -18,7 +18,7 @@ function Build($includeRuntime, $path) {
 
 Build '--no-self-contained' 'smol'
 
-if ($buildSelfContained) {
+if ($buildSelfContained -or $buildRelease) {
     Build '--self-contained' 'big'
 }
 
@@ -28,5 +28,12 @@ if (!$skipResultCopy) {
     }
     if ($IsMacOs) {
         . "$PSScriptRoot/copyCli.sh" 'smol/osx-x64'
+    }
+}
+
+if ($buildRelease) {
+    $targets = @("linux-x64", "win-x64", "osx-x64")
+    foreach ($target in $targets) {
+        Compress-Archive -Force -Path ./releases/big/$target/bloop* -DestinationPath ./releases/$target.zip
     }
 }
