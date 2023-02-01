@@ -10,7 +10,7 @@ public class Program
 {
     public static async Task<int> Main(string[] args)
     {
-        var parseObject = CommandLine.Parser.Default.ParseArguments<RequestOptions, ListOptions, ValidateOptions>(args);
+        var parseObject = Parser.Default.ParseArguments<RequestOptions, ListOptions, ValidateOptions>(args);
         var parsedArgs = parseObject as Parsed<object>;
         if (parsedArgs == null)
         {
