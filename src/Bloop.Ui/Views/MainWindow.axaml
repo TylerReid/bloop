@@ -12,12 +12,12 @@
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
              to set the actual DataContext for runtime, set the DataContext property in code (look at App.axaml.cs) -->
-        <vm:MainWindowViewModel/>
+        <vm:DesignMainViewModel/>
     </Design.DataContext>
 
 
 	<Grid ColumnDefinitions="*, 4, 3*">
-		<ListBox Grid.Column="0" ItemsSource="{Binding BloopConfig.Request}" SelectedItem="{Binding SelectedRequest}">
+		<ListBox Grid.Column="0" ItemsSource="{Binding Requests}" SelectedItem="{Binding SelectedRequest}">
 			<ListBox.ItemTemplate>
 				<DataTemplate>
 					<TextBlock Text="{Binding}"/>

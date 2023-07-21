@@ -40,6 +40,11 @@ public class Defaults
     public Dictionary<string, string> Headers { get; set; } = new();
 }
 
+public class MetaConfig
+{
+    public List<string> BloopDirectories { get; set; } = new();
+}
+
 internal class ModelHelper
 {
     // this is dumb but fun

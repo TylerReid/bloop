@@ -24,11 +24,7 @@ public class ConfigLoader
                 content = await File.ReadAllTextAsync(path);
             }
             
-            return Toml.ToModel<Config>(content, options: new TomlModelOptions
-            {
-                IgnoreMissingProperties = true,
-                ConvertToModel = ConvertToModel,
-            });
+            return Toml.ToModel<Config>(content, options: Options());
         }
         catch (FileNotFoundException e)
         {
@@ -39,6 +35,25 @@ public class ConfigLoader
             return new Error($"Could not load config file at {path}. {e.Message}");
         }
     }
+
+    public static async Task<MetaConfig> LoadMetaConfigAsync()
+    {
+        var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+        var globalConfigFilePath = Path.Join(homeDir, ".bloop.toml");
+        if (!File.Exists(globalConfigFilePath))
+        {
+            return new MetaConfig();
+        }
+
+        var content = await File.ReadAllTextAsync(globalConfigFilePath);
+        return Toml.ToModel<MetaConfig>(content, options: Options());
+    }
+
+    private static TomlModelOptions Options() => new()
+    {
+        IgnoreMissingProperties = true,
+        ConvertToModel = ConvertToModel,
+    };
 
     private static object? ConvertToModel(object value, Type type)
     {
