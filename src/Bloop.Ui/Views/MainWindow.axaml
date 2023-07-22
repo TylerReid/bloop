@@ -17,16 +17,29 @@
 
 
 	<Grid ColumnDefinitions="*, 4, 3*">
-		<ListBox Grid.Column="0" ItemsSource="{Binding BloopConfig.Requests}" SelectedItem="{Binding SelectedRequest}">
+		<ListBox Grid.Column="0" ItemsSource="{Binding BloopConfig.Requests}" SelectedItem="{Binding SelectedRequest}" >
 			<ListBox.ItemTemplate>
 				<DataTemplate>
-					<TextBlock Text="{Binding}"/>
+					<Grid RowDefinitions="2*,*">
+						<TextBlock Grid.Row="0" FontWeight="SemiBold" Text="{Binding Name}" Padding="3" />
+						<TextBlock Grid.Row="1" FontWeight="SemiLight" Text="{Binding Value.Uri}" Padding="2" />
+					</Grid>
 				</DataTemplate>
 			</ListBox.ItemTemplate>
 		</ListBox>
 		<GridSplitter Grid.Column="1" ResizeDirection="Columns" />
-		<Grid Grid.Column="2">
-			<TextBlock Text="{Binding SelectedRequest}" />
+		<Grid Grid.Column="2" RowDefinitions="*,4,*">
+			<Grid Grid.Row="0" >
+				<Grid Grid.Row="0" ColumnDefinitions="auto,auto,auto">
+					<TextBlock Text="{Binding SelectedRequest.Value.Method}" Margin="10" Grid.Column="0"/>
+					<TextBlock Text="{Binding SelectedRequest.Value.Uri}" Margin="10" Grid.Column="1" />
+					<Button Content="Submit" Grid.Column="2" />
+				</Grid>
+				
+			</Grid>
+			<GridSplitter Grid.Row="1" ResizeDirection="Rows" />
+			<Grid Grid.Row="2" >
+			</Grid>
 		</Grid>
 	</Grid>
 
