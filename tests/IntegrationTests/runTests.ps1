@@ -21,6 +21,8 @@ $testJob = Start-Job -ScriptBlock {
 }
 
 dotnet publish ../../src/Bloop.Cli/Bloop.Cli.csproj --nologo `
+    -c Release `
+    /p:DebugType=None /p:DebugSymbols=false `
     -p:PublishSingleFile=true -o .
 
 $waitCount = 0
@@ -132,4 +134,6 @@ Write-Host $echo
 Assert "this is a default value" $echo
 
 $testJob | Stop-Job
+Remove-Item ./bloop.exe -ErrorAction SilentlyContinue
+Remove-Item ./bloop -ErrorAction SilentlyContinue
 Pop-Location
