@@ -26,7 +26,10 @@
 							<TextBlock FontWeight="SemiBold" Text="{Binding Name}" Padding="3" />
 							<TextBlock FontWeight="SemiLight" Text="{Binding Uri}" Padding="2" />
 						</StackPanel>
-						<Button Content="⏵	" Margin="10" DockPanel.Dock="Right" Command="{ReflectionBinding $parent[Window].DataContext.SendRequestAsync}"/>
+						<Button Content="⏵	" Margin="10" DockPanel.Dock="Right" 
+								Command="{Binding ((vm:MainWindowViewModel)DataContext).SendRequestAsync, RelativeSource={RelativeSource AncestorType=Window}}"
+								CommandParameter="{Binding}"
+								/>
 					</DockPanel>
 				</DataTemplate>
 			</ListBox.ItemTemplate>

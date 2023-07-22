@@ -22,9 +22,18 @@ public class MainWindowViewModel : ViewModelBase
         BloopConfig = Configs.FirstOrDefault();
     }
 
-    public async Task SendRequestAsync()
+    public async Task SendRequestAsync(Request request)
     {
-        await Task.Delay(TimeSpan.FromSeconds(1));
-        RequestResultDocument = new TextDocument("derp derp");
+        var result = await _blooper.SendRequest(BloopConfig, request);
+        RequestResultDocument = await result.MatchAsync(async response => 
+        {
+            RequestResult = new(request, response);
+            var content = await response.Content.ReadAsStringAsync();
+            return new TextDocument(content);
+        }, 
+        error => 
+        {
+            return Task.FromResult(new TextDocument(error.Message));
+        });
     }
 }
