@@ -11,6 +11,7 @@ function Assert($expected, $actual) {
     }
 }
 
+Push-Location
 Set-Location $PSScriptRoot
 
 Write-Host "Starting test server"
@@ -18,6 +19,9 @@ $testJob = Start-Job -ScriptBlock {
     Set-Location ../TestApi
     dotnet run
 }
+
+dotnet publish ../../src/Bloop.Cli/Bloop.Cli.csproj --nologo `
+    -p:PublishSingleFile=true -o .
 
 $waitCount = 0
 while (-not (Test-Connection -TargetName localhost -TcpPort 5284))
@@ -32,100 +36,100 @@ while (-not (Test-Connection -TargetName localhost -TcpPort 5284))
 
 Write-Host "Beginning tests"
 
-$validate = bloop validate
+$validate = ./bloop validate
 Write-Host "`nbloop validate output:"
 Write-Host $validate
 
 Assert $null $validate
 
-$validate = bloop validate -c ./bad/bad.toml
+$validate = ./bloop validate -c ./bad/bad.toml
 Write-Host "`nbloop validate output:"
 Write-Host $validate
 
 Assert "variable ``bad`` has a ``jpath`` set, but is missing a ``source``" $validate
 
-$list = bloop list
+$list = ./bloop list
 Write-Host "`nbloop list output:"
 Write-Host $list
 
-$echo = bloop echoquery
+$echo = ./bloop echoquery
 Write-Host "`nbloop request output:"
 Write-Host $echo
 
 Assert "intgtest" $echo
 
-$echo = bloop secondfile
+$echo = ./bloop secondfile
 Write-Host "`nbloop secondfile output:"
 Write-Host $echo
 
 Assert "intgtest" $echo
 
 $Env:intgtestvar = "blooooooop"
-$echo = bloop env
+$echo = ./bloop env
 Write-Host "`nbloop env output:"
 Write-Host $echo
 
 Assert "blooooooop" $echo
 
-$echo = bloop file
+$echo = ./bloop file
 Write-Host "`nbloop file output:"
 Write-Host $echo
 
 Assert "blorp" $echo
 
-$echo = bloop const
+$echo = ./bloop const
 Write-Host "`nbloop const output:"
 Write-Host $echo
 
 Assert "something constant" $echo
 
-$echo = bloop otherrequest
+$echo = ./bloop otherrequest
 Write-Host "`nbloop otherrequest output:"
 Write-Host $echo
 
 Assert "localhost:5284" $echo
 
-$echo = bloop script
+$echo = ./bloop script
 Write-Host "`nbloop script output:"
 Write-Host $echo
 
 Assert "hello from powershell" $echo
 
-$echo = bloop env --var env=wow
+$echo = ./bloop env --var env=wow
 Write-Host "`nbloop env output:"
 Write-Host $echo
 
 Assert "wow" $echo
 
-$echo = bloop echoform --var 'env=something cool'
+$echo = ./bloop echoform --var 'env=something cool'
 Write-Host "`nbloop env cli param output:"
 Write-Host $echo
 
 Assert-Json "{`"SomeFormKey`": `"Some Form Value`", `"Test`": `"something cool`"}" $echo
 
-$echo = bloop echoarray
+$echo = ./bloop echoarray
 Write-Host "`nbloop array output:"
 Write-Host $echo
 
 Assert-Json "[{`"value`": `"derp`"}, {`"value`": `"derp`"}, {`"value`": `"derp`"}]" $echo
 
-$echo = bloop envfallbackfile
+$echo = ./bloop envfallbackfile
 Write-Host "`nbloop env fallback to file output:"
 Write-Host $echo
 
 Assert "blorp" $echo
 
-$echo = bloop envfallback
+$echo = ./bloop envfallback
 Write-Host "`nbloop has env and file output:"
 Write-Host $echo
 
 Assert "blooooooop" $echo
 
-$echo = bloop 'default'
+$echo = ./bloop 'default'
 Write-Host "`nbloop default output:"
 Write-Host $echo
 
 Assert "this is a default value" $echo
 
-
 $testJob | Stop-Job
+Pop-Location

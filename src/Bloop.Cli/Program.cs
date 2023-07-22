@@ -74,9 +74,9 @@ public class Program
                 if ("all".StartsWith(options.Type) || "requests".StartsWith(options.Type))
                 {
                     Output.WriteLine("requests:", ConsoleColor.Green);
-                    foreach (var (name, request) in config.Request)
+                    foreach (var request in config.Requests)
                     {
-                        Output.Write($"{name}:\t", ConsoleColor.White);
+                        Output.Write($"{request.Name}:\t", ConsoleColor.White);
                         Output.WriteLine($"{request}");
                     }
                     Output.WriteLine();
@@ -86,9 +86,9 @@ public class Program
                 if ("all".StartsWith(options.Type) || "variables".StartsWith(options.Type))
                 {
                     Output.WriteLine("variables:", ConsoleColor.Green);
-                    foreach (var (name, variable) in config.Variable)
+                    foreach (var variable in config.Variables)
                     {
-                        Output.Write($"{name}:\t", ConsoleColor.White);
+                        Output.Write($"{variable.Name}:\t", ConsoleColor.White);
                         Output.WriteLine($"{variable}");
                     }
                     Output.WriteLine();
@@ -137,9 +137,10 @@ public class Program
                 Output.WriteError($"invalid variable: {optionVar}\nexpected variables to be in the form of someKey=SomeValue");
                 return 1;
             }
-            if (config.Variable.ContainsKey(split[0]))
+            var variable = config.Variables.SingleOrDefault(x => x.Name == split[0]);
+            if (variable != null)
             {
-                config.Variable[split[0]].Value = split[1];
+                variable.Value = split[1];
             }
         }
 

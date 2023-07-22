@@ -10,9 +10,9 @@ public class MainWindowViewModel : ViewModelBase
 {
     private Blooper _blooper = new();
 
-    [Reactive] public ObservableCollection<UiConfig> Configs { get; set; } = new();
-    [Reactive] public UiConfig? BloopConfig { get; set; }
-    [Reactive] public NamedObject<Request>? SelectedRequest { get ; set; }
+    [Reactive] public ObservableCollection<Config> Configs { get; set; } = new();
+    [Reactive] public Config? BloopConfig { get; set; }
+    [Reactive] public Request? SelectedRequest { get ; set; }
     [Reactive] public RequestResult? RequestResult { get; set; }
     [Reactive] public TextDocument? RequestResultDocument { get; set; }
 

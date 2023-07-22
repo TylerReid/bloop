@@ -24,7 +24,7 @@
 					<DockPanel LastChildFill="True">
 						<StackPanel DockPanel.Dock="Left">
 							<TextBlock FontWeight="SemiBold" Text="{Binding Name}" Padding="3" />
-							<TextBlock FontWeight="SemiLight" Text="{Binding Value.Uri}" Padding="2" />
+							<TextBlock FontWeight="SemiLight" Text="{Binding Uri}" Padding="2" />
 						</StackPanel>
 						<Button Content="⏵	" Margin="10" DockPanel.Dock="Right" Command="{ReflectionBinding $parent[Window].DataContext.SendRequestAsync}"/>
 					</DockPanel>

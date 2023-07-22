@@ -24,7 +24,7 @@ public class ConfigLoader
                 content = await File.ReadAllTextAsync(path);
             }
             
-            return Toml.ToModel<Config>(content, options: Options());
+            return Toml.ToModel<SerializationConfig>(content, options: Options()).ToConfig();
         }
         catch (FileNotFoundException e)
         {
@@ -68,7 +68,7 @@ public class ConfigLoader
                 content = File.ReadAllText(path);
             }
 
-            return Toml.ToModel<Config>(content, options: Options());
+            return Toml.ToModel<SerializationConfig>(content, options: Options()).ToConfig();
         }
         catch (FileNotFoundException e)
         {
@@ -109,5 +109,31 @@ public class ConfigLoader
             var t when t == typeof(HttpMethod) => new HttpMethod(s),
             _ => null,
         };
+    }
+
+    private class SerializationConfig
+    {
+        public Dictionary<string, Request> Request { get; set; } = new();
+        public Dictionary<string, Variable> Variable { get; set; } = new();
+        public Defaults Defaults { get; set; } = new();
+
+        public Config ToConfig()
+        {
+            var config = new Config
+            {
+                Defaults = Defaults
+            };
+            foreach (var (key, value) in Request)
+            {
+                value.Name = key;
+                config.Requests.Add(value);
+            }
+            foreach (var (key, value) in Variable)
+            {
+                value.Name = key;
+                config.Variables.Add(value);
+            }
+            return config;
+        }
     }
 }

@@ -10,14 +10,14 @@ public static class ConfigurationLoader
 
     // todo remove this once async vm load is figured out
     [Obsolete]
-    public static List<UiConfig> LoadConfigs()
+    public static List<Config> LoadConfigs()
     {
-        var configs = new List<UiConfig>();
+        var configs = new List<Config>();
         var envPaths = Environment.GetEnvironmentVariable("BLOOP_CONFIG_DIRS");
         foreach (var path in envPaths?.Split(PathListSeparator).ToList() ?? LoadPathsFromProfile())
         {
             // todo handle errors
-            var coreConfig = ConfigLoader.LoadConfig(path).UnwrapSuccess().ToCoreConfig();
+            var coreConfig = ConfigLoader.LoadConfig(path).UnwrapSuccess();
             configs.Add(coreConfig);
         }
         return configs;
@@ -35,22 +35,6 @@ public static class ConfigurationLoader
         return configs;
     }
 
-    public static UiConfig ToCoreConfig(this Config config)
-    {
-        var uiConfig = new UiConfig
-        {
-            Defaults = config.Defaults
-        };
-        foreach (var (key, request) in config.Request)
-        {
-            uiConfig.Requests.Add(new NamedObject<Request> { Name = key, Value = request, });
-        }
-        foreach (var (key, variable) in config.Variable)
-        {
-            uiConfig.Variables.Add(new NamedObject<Variable> { Name = key, Value = variable, });
-        }
-        return uiConfig;
-    }
     private static async Task<List<string>> LoadPathsFromProfileAsync()
     {
         var meta = await ConfigLoader.LoadMetaConfigAsync();

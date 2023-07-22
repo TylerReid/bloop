@@ -14,36 +14,36 @@ public class Validator
 
     static void BodyAndFormSet(List<Error> errors, Config config)
     {
-        foreach (var (name, request) in config.Request)
+        foreach (var request in config.Requests)
         {
             if (request.Body != null && request.Form != null)
             {
-                errors.Add(new Error($"both `body` and `form` are set on request `{name}`"));
+                errors.Add(new Error($"both `body` and `form` are set on request `{request.Name}`"));
             }
         }
     }
 
     static void ContentTypeNoBody(List<Error> errors, Config config)
     {
-        foreach (var (name, request) in config.Request)
+        foreach (var request in config.Requests)
         {
             if (request.ContentType != null && request.Body == null)
             {
-                errors.Add(new Error($"`content_type` is `{request.ContentType}` on request `{name}` but `body` is missing"));
+                errors.Add(new Error($"`content_type` is `{request.ContentType}` on request `{request.Name}` but `body` is missing"));
             }
         }
     }
 
     static void VariableNotDefined(List<Error> errors, Config config)
     {
-        foreach (var (name, request) in config.Request)
+        foreach (var request in config.Requests)
         {
             var variables = VariableHandler.GetVariables(config.Defaults, request);
             foreach (var variable in variables)
             {
-                if (!config.Variable.ContainsKey(variable))
+                if (!config.Variables.Any(v => v.Name == variable))
                 {
-                    errors.Add(new Error($"variable ${{{variable}}} is used in `{name}` but is not defined as a variable"));
+                    errors.Add(new Error($"variable ${{{variable}}} is used in `{request.Name}` but is not defined as a variable"));
                 }
             }
         }
@@ -51,7 +51,7 @@ public class Validator
 
     static void VariablePropsMakeSense(List<Error> errors, Config config)
     {
-        foreach (var (name, variable) in config.Variable)
+        foreach (var variable in config.Variables)
         {
             var hasValue = variable.Value != null;
             var hasJpath = variable.Jpath != null;
@@ -63,17 +63,17 @@ public class Validator
 
             if (hasJpath && !hasSource)
             {
-                errors.Add(new Error($"variable `{name}` has a `jpath` set, but is missing a `source`"));
+                errors.Add(new Error($"variable `{variable.Name}` has a `jpath` set, but is missing a `source`"));
             }
 
             if (!hasJpath && hasSource)
             {
-                errors.Add(new Error($"variable `{name}` has a `source` set, but is missing a `jpath`"));
+                errors.Add(new Error($"variable `{variable.Name}` has a `source` set, but is missing a `jpath`"));
             }
 
             if (hasCommandArgs && !hasCommand)
             {
-                errors.Add(new Error($"variable `{name}` has `command_args` set, but is missing a `command`"));
+                errors.Add(new Error($"variable `{variable.Name}` has `command_args` set, but is missing a `command`"));
             }
         }
     }

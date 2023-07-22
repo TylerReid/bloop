@@ -22,7 +22,7 @@ public class VariableHandler
         .ToList();
 
     public static string ExpandVariables(string original, Config config) => 
-        ExpandVariables(original, config.Variable.ToDictionary(x => x.Key, x => x.Value.Value!));
+        ExpandVariables(original, config.Variables.ToDictionary(x => x.Name, x => x.Value!));
 
     public static string ExpandVariables(string original, Dictionary<string, string> mappings)
     {
@@ -33,13 +33,13 @@ public class VariableHandler
         return original;
     }
 
-    public static Dictionary<string, Variable> UnsatisfiedVariables(Config config) => config.Variable
-        .Where(x => x.Value.Value == null)
-        .ToDictionary(k => k.Key, v => v.Value);
+    public static List<Variable> UnsatisfiedVariables(Config config) => config.Variables
+        .Where(x => x.Value == null)
+        .ToList();
 
-    public static Dictionary<string, Variable> SatisfiedVariables(Config config) => config.Variable
-        .Where(x => x.Value.Value is string)
-        .ToDictionary(k => k.Key, v => v.Value);
+    public static List<Variable> SatisfiedVariables(Config config) => config.Variables
+        .Where(x => x.Value is string)
+        .ToList();
 
     public static async Task<Either<Unit, Error>> RunCommand(Variable variable)
     {
@@ -83,77 +83,77 @@ public class VariableHandler
         var variables = GetVariables(config.Defaults, request);
         foreach (var v in variables)
         {
-            if (config.Variable.TryGetValue(v, out var variable))
+            var variable = config.Variables.SingleOrDefault(x => x.Name == v);
+
+            if (variable == null)
             {
+                return new Error($"variable {v} is used in request {request.Uri} but is not defined as a variable");
+            }
+
+            if (variable.Value != null)
+            {
+                continue;
+            }
+
+            if (variable.Jpath != null && variable.Source != null)
+            {
+                // if the source is this request, don't bloop because that will cause infinite loop
+                // one legitimate way to end up in this scenario is with default headers
+                if (request.Name == variable.Source)
+                {
+                    continue;
+                }
+                var response = await blooper.SendRequest(config, variable.Source);
+                if (response.Unwrap() is Error e)
+                {
+                    return e;
+                }
+                continue;
+            }
+
+            if (variable.Command != null)
+            {
+                var commandResult = await RunCommand(variable);
+                if (commandResult.Unwrap() is Error e)
+                {
+                    return e;
+                }
+                continue;
+            }
+
+            if (variable.Env != null)
+            {
+                variable.Value = Environment.GetEnvironmentVariable(variable.Env);
                 if (variable.Value != null)
                 {
                     continue;
                 }
-
-                if (variable.Jpath != null && variable.Source != null)
-                {
-                    // if the source is this request, don't bloop because that will cause infinite loop
-                    // one legitamate way to end up in this scenario is with default headers
-                    if (config.Request.Single(x => x.Value == request).Key == variable.Source)
-                    {
-                        continue;
-                    }
-                    var response = await blooper.SendRequest(config, variable.Source);
-                    if (response.Unwrap() is Error e)
-                    {
-                        return e;
-                    }
-                    continue;
-                }
-
-                if (variable.Command != null)
-                {
-                    var commandResult = await RunCommand(variable);
-                    if (commandResult.Unwrap() is Error e)
-                    {
-                        return e;
-                    }
-                    continue;
-                }
-
-                if (variable.Env != null)
-                {
-                    variable.Value = Environment.GetEnvironmentVariable(variable.Env);
-                    if (variable.Value != null)
-                    {
-                        continue;
-                    }
-                }
-
-                if (variable.File != null)
-                {
-                    try
-                    {
-                        variable.Value = await File.ReadAllTextAsync(variable.File);
-                        continue;
-                    }
-                    catch (Exception e) when (variable.Default == null)
-                    {
-                        return new Error($"error loading variable from file {variable.File}: {e.Message}");
-                    }
-                    catch (FileNotFoundException)
-                    {
-                        //ignore because we have a default
-                    }
-                }
-
-                if (variable.Default != null)
-                {
-                    variable.Value = variable.Default;
-                    continue;
-                }
-
-                return new Error($"variable {v} does not have a value, file, jpath, or command defined");
             }
-            else
+
+            if (variable.File != null)
             {
-                return new Error($"variable {v} is used in request {request.Uri} but is not defined as a variable");
+                try
+                {
+                    variable.Value = await File.ReadAllTextAsync(variable.File);
+                    continue;
+                }
+                catch (Exception e) when (variable.Default == null)
+                {
+                    return new Error($"error loading variable from file {variable.File}: {e.Message}");
+                }
+                catch (FileNotFoundException)
+                {
+                    //ignore because we have a default
+                }
             }
+
+            if (variable.Default != null)
+            {
+                variable.Value = variable.Default;
+                continue;
+            }
+
+            return new Error($"variable {v} does not have a value, file, jpath, or command defined");
         }
 
         return Unit.Instance;

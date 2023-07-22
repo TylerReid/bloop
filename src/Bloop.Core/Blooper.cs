@@ -68,14 +68,13 @@ public class Blooper
 
         if (response.IsSuccessStatusCode)
         {
-            var requestName = config.Request.Single(x => x.Value == request).Key;
-            var variables = config.Variable.Where(x => x.Value.Source == requestName);
+            var variables = config.Variables.Where(x => x.Source == request.Name);
 
             //maybe support xpath or like direct body response to var?
             if (response.Content?.Headers?.ContentType?.MediaType == "application/json")
             {
                 var json = JToken.Parse(content);
-                foreach (var (_, variable) in variables)
+                foreach (var variable in variables)
                 {
                     if (variable.Jpath == null)
                     {
@@ -106,7 +105,8 @@ public class Blooper
 
     public Either<Request, Error> GetRequest(Config config, string requestName)
     {
-        if (!config.Request.TryGetValue(requestName, out var request))
+        var request = config.Requests.SingleOrDefault(x => x.Name == requestName);
+        if (request == null)
         {
             return new Error($"no request found with name `{requestName}` in config");
         }

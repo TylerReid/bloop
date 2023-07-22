@@ -1,16 +1,19 @@
+using System.Runtime.Serialization;
 using System.Text;
 
 namespace Bloop.Core;
 
 public record Config
 {
-    public Dictionary<string, Request> Request { get; set; } = new();
-    public Dictionary<string, Variable> Variable { get; set; } = new();
+    public List<Request> Requests { get; set; } = new();
+    public List<Variable> Variables { get; set; } = new();
     public Defaults Defaults { get; set; } = new();
 }
 
 public record Request
 {
+    [IgnoreDataMember]
+    public string Name { get; set; } = "";
     public string Uri { get; set; } = "http://localhost";
     public HttpMethod Method { get; set; } = HttpMethod.Get;
     public string? Body { get; set; }
@@ -23,6 +26,8 @@ public record Request
 
 public record Variable
 {
+    [IgnoreDataMember]
+    public string Name { get; set; } = "";
     public string? Source { get; set; }
     public string? Value { get; set; }
     public string? Jpath { get; set; }
