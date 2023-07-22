@@ -2,14 +2,14 @@ using System.Text;
 
 namespace Bloop.Core;
 
-public class Config
+public record Config
 {
     public Dictionary<string, Request> Request { get; set; } = new();
     public Dictionary<string, Variable> Variable { get; set; } = new();
     public Defaults Defaults { get; set; } = new();
 }
 
-public class Request
+public record Request
 {
     public string Uri { get; set; } = "http://localhost";
     public HttpMethod Method { get; set; } = HttpMethod.Get;
@@ -21,7 +21,7 @@ public class Request
     public override string ToString() => ModelHelper.ToString(this);
 }
 
-public class Variable
+public record Variable
 {
     public string? Source { get; set; }
     public string? Value { get; set; }
@@ -35,12 +35,12 @@ public class Variable
     public override string ToString() => ModelHelper.ToString(this);
 }
 
-public class Defaults
+public record Defaults
 {
     public Dictionary<string, string> Headers { get; set; } = new();
 }
 
-public class MetaConfig
+public record MetaConfig
 {
     public List<string> BloopDirectories { get; set; } = new();
 }

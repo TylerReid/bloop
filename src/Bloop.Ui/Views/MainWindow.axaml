@@ -3,6 +3,7 @@
         xmlns:vm="using:Bloop.Avalonia.Ui.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+		xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="Bloop.Avalonia.Ui.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
@@ -20,27 +21,21 @@
 		<ListBox Grid.Column="0" ItemsSource="{Binding BloopConfig.Requests}" SelectedItem="{Binding SelectedRequest}" >
 			<ListBox.ItemTemplate>
 				<DataTemplate>
-					<Grid RowDefinitions="2*,*">
-						<TextBlock Grid.Row="0" FontWeight="SemiBold" Text="{Binding Name}" Padding="3" />
-						<TextBlock Grid.Row="1" FontWeight="SemiLight" Text="{Binding Value.Uri}" Padding="2" />
-					</Grid>
+					<DockPanel LastChildFill="True">
+						<StackPanel DockPanel.Dock="Left">
+							<TextBlock FontWeight="SemiBold" Text="{Binding Name}" Padding="3" />
+							<TextBlock FontWeight="SemiLight" Text="{Binding Value.Uri}" Padding="2" />
+						</StackPanel>
+						<Button Content="⏵	" Margin="10" DockPanel.Dock="Right" Command="{ReflectionBinding $parent[Window].DataContext.SendRequestAsync}"/>
+					</DockPanel>
 				</DataTemplate>
 			</ListBox.ItemTemplate>
 		</ListBox>
 		<GridSplitter Grid.Column="1" ResizeDirection="Columns" />
-		<Grid Grid.Column="2" RowDefinitions="*,4,*">
-			<Grid Grid.Row="0" >
-				<Grid Grid.Row="0" ColumnDefinitions="auto,auto,auto">
-					<TextBlock Text="{Binding SelectedRequest.Value.Method}" Margin="10" Grid.Column="0"/>
-					<TextBlock Text="{Binding SelectedRequest.Value.Uri}" Margin="10" Grid.Column="1" />
-					<Button Content="Submit" Grid.Column="2" />
-				</Grid>
-				
-			</Grid>
-			<GridSplitter Grid.Row="1" ResizeDirection="Rows" />
-			<Grid Grid.Row="2" >
-			</Grid>
-		</Grid>
+		<AvaloniaEdit:TextEditor Grid.Column="2" 
+								 Document="{Binding RequestResultDocument}"
+								 ShowLineNumbers="True"
+								/>
 	</Grid>
 
 </Window>

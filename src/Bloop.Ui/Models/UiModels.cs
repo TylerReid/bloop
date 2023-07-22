@@ -16,6 +16,20 @@ public class UiConfig : ReactiveObject
     public Defaults? Defaults { get; set; }
 }
 
+public class RequestResult : ReactiveObject
+{
+    [Reactive]
+    public NamedObject<Request> Request { get; set; }
+    [Reactive]
+    public HttpResponseMessage Response { get; set; }
+
+    public RequestResult(NamedObject<Request> request, HttpResponseMessage response)
+    {
+        Request = request;
+        Response = response;
+    }
+}
+
 public class NamedObject<T> : ReactiveObject
 {
     [Reactive]
