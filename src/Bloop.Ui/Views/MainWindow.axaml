@@ -17,7 +17,7 @@
 
 
 	<Grid ColumnDefinitions="*, 4, 3*">
-		<ListBox Grid.Column="0" ItemsSource="{Binding Requests}" SelectedItem="{Binding SelectedRequest}">
+		<ListBox Grid.Column="0" ItemsSource="{Binding BloopConfig.Requests}" SelectedItem="{Binding SelectedRequest}">
 			<ListBox.ItemTemplate>
 				<DataTemplate>
 					<TextBlock Text="{Binding}"/>

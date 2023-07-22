@@ -45,7 +45,7 @@ public class MetaConfig
     public List<string> BloopDirectories { get; set; } = new();
 }
 
-internal class ModelHelper
+public class ModelHelper
 {
     // this is dumb but fun
     public static string ToString<T>(T obj)

@@ -1,6 +1,5 @@
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
+using Bloop.Avalonia.Ui.Models;
 using Bloop.Core;
 
 namespace Bloop.Avalonia.Ui.ViewModels;
@@ -9,26 +8,30 @@ public class DesignMainViewModel : MainWindowViewModel
 {
     public DesignMainViewModel()
     {
-        Configs = new ObservableCollection<Config>
+        Configs = new ObservableCollection<UiConfig>
         {
             new()
             {
-                Request = new Dictionary<string, Request>
+                Requests = new ObservableCollection<NamedObject<Request>>
                 {
+                    new()
                     {
-                        "Derp", new Request
+                        Name = "Derp",
+                        Value = new()
                         {
                             Uri = "https://derp.com",
-                        }
+                        },
                     },
+                    new()
                     {
-                        "Bloop", new Request
+                        Name = "Bloop",
+                        Value = new()
                         {
-                            Uri = "http://bloop.com"
-                        }
+                            Uri = "http://bloop.com",
+                        },
                     },
-                }
-            }
+                },
+            },
         };
 
         BloopConfig = Configs.FirstOrDefault();
