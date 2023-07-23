@@ -31,7 +31,10 @@
 				<ListBox ItemsSource="{Binding BloopConfig.Variables}">
 					<ListBox.ItemTemplate>
 						<DataTemplate>
-							<TextBlock Text="{Binding}" TextWrapping="WrapWithOverflow"/>
+							<StackPanel>
+								<TextBlock Text="{Binding Name}" FontWeight="Bold" Margin="2" />
+								<TextBox Text="{Binding Value}" />
+							</StackPanel>
 						</DataTemplate>
 					</ListBox.ItemTemplate>
 				</ListBox>
