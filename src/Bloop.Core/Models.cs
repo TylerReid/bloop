@@ -1,3 +1,5 @@
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
 
@@ -26,12 +28,21 @@ public record Request
     public override string ToString() => ModelHelper.ToString(this);
 }
 
-public record Variable
+public record Variable : INotifyPropertyChanged
 {
     [IgnoreDataMember]
     public string Name { get; set; } = "";
     public string? Source { get; set; }
-    public string? Value { get; set; }
+    private string? _value;
+    public string? Value 
+    { 
+        get => _value; 
+        set
+        {
+            _value = value;
+            OnPropertyChanged();
+        } 
+    }
     public string? Jpath { get; set; }
     public string? Command { get; set; }
     public string? CommandArgs { get; set; }
@@ -39,7 +50,14 @@ public record Variable
     public string? Env { get; set; }
     public string? Default { get; set; }
 
+    public event PropertyChangedEventHandler? PropertyChanged;
+
     public override string ToString() => ModelHelper.ToString(this);
+
+    protected void OnPropertyChanged([CallerMemberName] string? name = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
 }
 
 public record Defaults
