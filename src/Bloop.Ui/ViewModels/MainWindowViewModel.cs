@@ -1,6 +1,7 @@
 ﻿using AvaloniaEdit.Document;
 using Bloop.Avalonia.Ui.Models;
 using Bloop.Core;
+using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using System.Collections.ObjectModel;
 using System.Net.Http.Json;

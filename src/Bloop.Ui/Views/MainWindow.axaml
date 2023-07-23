@@ -27,18 +27,27 @@
 					</DataTemplate>
 				</ComboBox.ItemTemplate>
 			</ComboBox>
+			<Expander DockPanel.Dock="Bottom" Header="Variables">
+				<ListBox ItemsSource="{Binding BloopConfig.Variables}">
+					<ListBox.ItemTemplate>
+						<DataTemplate>
+							<TextBlock Text="{Binding}"/>
+						</DataTemplate>
+					</ListBox.ItemTemplate>
+				</ListBox>
+			</Expander>
 			<ListBox ItemsSource="{Binding BloopConfig.Requests}" SelectedItem="{Binding SelectedRequest}" DockPanel.Dock="Bottom">
 				<ListBox.ItemTemplate>
 					<DataTemplate>
 						<DockPanel LastChildFill="True">
-							<StackPanel DockPanel.Dock="Left">
-								<TextBlock FontWeight="SemiBold" Text="{Binding Name}" Padding="3" />
-								<TextBlock FontWeight="SemiLight" Text="{Binding Uri}" Padding="2" />
-							</StackPanel>
-							<Button Content="⏵	" Margin="10" DockPanel.Dock="Right"
+							<Button Content="⏵	" Margin="10" DockPanel.Dock="Left"
 									Command="{Binding ((vm:MainWindowViewModel)DataContext).SendRequestAsync, RelativeSource={RelativeSource AncestorType=Window}}"
 									CommandParameter="{Binding}"
 								/>
+							<StackPanel DockPanel.Dock="Right">
+								<TextBlock FontWeight="SemiBold" Text="{Binding Name}" Padding="3" />
+								<TextBlock FontWeight="SemiLight" Text="{Binding Uri}" Padding="2" />
+							</StackPanel>
 						</DockPanel>
 					</DataTemplate>
 				</ListBox.ItemTemplate>
