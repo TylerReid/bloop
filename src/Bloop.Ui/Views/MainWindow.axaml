@@ -31,7 +31,7 @@
 				<ListBox ItemsSource="{Binding BloopConfig.Variables}">
 					<ListBox.ItemTemplate>
 						<DataTemplate>
-							<TextBlock Text="{Binding}"/>
+							<TextBlock Text="{Binding}" TextWrapping="WrapWithOverflow"/>
 						</DataTemplate>
 					</ListBox.ItemTemplate>
 				</ListBox>
@@ -57,6 +57,7 @@
 		<AvaloniaEdit:TextEditor Grid.Column="2" 
 								 Document="{Binding RequestResultDocument}"
 								 ShowLineNumbers="True"
+								 SyntaxHighlighting="{Binding SyntaxHighlighting}"
 								/>
 	</Grid>
 

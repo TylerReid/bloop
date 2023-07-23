@@ -12,6 +12,10 @@
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <EmbeddedResource Include="Resources\json.xshd" />
+  </ItemGroup>
 
 
   <ItemGroup>

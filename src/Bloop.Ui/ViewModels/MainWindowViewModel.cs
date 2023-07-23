@@ -1,7 +1,8 @@
 ﻿using AvaloniaEdit.Document;
+using AvaloniaEdit.Highlighting;
 using Bloop.Avalonia.Ui.Models;
+using Bloop.Avalonia.Ui.Resources;
 using Bloop.Core;
-using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using System.Collections.ObjectModel;
 using System.Net.Http.Json;
@@ -18,9 +19,11 @@ public class MainWindowViewModel : ViewModelBase
     [Reactive] public Request? SelectedRequest { get ; set; }
     [Reactive] public RequestResult? RequestResult { get; set; }
     [Reactive] public TextDocument? RequestResultDocument { get; set; }
+    [Reactive] public IHighlightingDefinition SyntaxHighlighting { get; set; }
 
     public MainWindowViewModel()
     {
+        SetHighlighting(".txt");
         _ = LoadAsync();
     }
 
@@ -33,10 +36,12 @@ public class MainWindowViewModel : ViewModelBase
         RequestResultDocument = await result.MatchAsync(async response => 
         {
             RequestResult = new(request, response);
+            SetHighlighting("json");
             return await CreateDocument(response);
         }, 
         error => 
         {
+            SetHighlighting("txt");
             return Task.FromResult(new TextDocument(error.Message));
         });
     }
@@ -65,5 +70,14 @@ public class MainWindowViewModel : ViewModelBase
         }
 
         return new TextDocument(content);
+    }
+
+    private void SetHighlighting(string language)
+    {
+        SyntaxHighlighting = language switch
+        {
+            "json" => HighlightingManager.Instance.GetBloopDefinition(language),
+            _ => HighlightingManager.Instance.GetDefinition(language),
+        };
     }
 }

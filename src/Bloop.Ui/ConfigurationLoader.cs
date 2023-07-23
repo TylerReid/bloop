@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using Bloop.Avalonia.Ui.Models;
 using Bloop.Core;
 
 namespace Bloop.Avalonia.Ui;
