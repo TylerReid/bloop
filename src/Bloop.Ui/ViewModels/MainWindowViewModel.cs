@@ -3,6 +3,8 @@ using Bloop.Avalonia.Ui.Models;
 using Bloop.Core;
 using ReactiveUI.Fody.Helpers;
 using System.Collections.ObjectModel;
+using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace Bloop.Avalonia.Ui.ViewModels;
 
@@ -18,22 +20,49 @@ public class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
-        Configs = new(ConfigurationLoader.LoadConfigs());
-        BloopConfig = Configs.FirstOrDefault();
+        _ = LoadAsync();
     }
 
     public async Task SendRequestAsync(Request request)
     {
-        var result = await _blooper.SendRequest(BloopConfig, request);
+        // this is kind of dumb to set here, but we need to do this to make relative paths from variables work
+        // this could be set when we get a new selected config but that would make the auto property go away
+        Directory.SetCurrentDirectory(BloopConfig!.Directory);
+        var result = await _blooper.SendRequest(BloopConfig!, request);
         RequestResultDocument = await result.MatchAsync(async response => 
         {
             RequestResult = new(request, response);
-            var content = await response.Content.ReadAsStringAsync();
-            return new TextDocument(content);
+            return await CreateDocument(response);
         }, 
         error => 
         {
             return Task.FromResult(new TextDocument(error.Message));
         });
+    }
+
+    private async Task LoadAsync()
+    {
+        Configs = new(await ConfigurationLoader.LoadConfigsAsync());
+        BloopConfig = Configs.FirstOrDefault();
+    }
+
+    private async Task<TextDocument> CreateDocument(HttpResponseMessage response)
+    {
+        string content;
+
+        if (response.Content.Headers.ContentType?.MediaType == "application/json")
+        {
+            var o = await response.Content.ReadFromJsonAsync<dynamic>();
+            content = JsonSerializer.Serialize(o, new JsonSerializerOptions 
+            { 
+                WriteIndented = true,
+            });
+        }
+        else
+        {
+            content = await response.Content.ReadAsStringAsync();
+        }
+
+        return new TextDocument(content);
     }
 }

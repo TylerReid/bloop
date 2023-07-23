@@ -18,22 +18,32 @@
 
 
 	<Grid ColumnDefinitions="*, 4, 3*">
-		<ListBox Grid.Column="0" ItemsSource="{Binding BloopConfig.Requests}" SelectedItem="{Binding SelectedRequest}" >
-			<ListBox.ItemTemplate>
-				<DataTemplate>
-					<DockPanel LastChildFill="True">
-						<StackPanel DockPanel.Dock="Left">
-							<TextBlock FontWeight="SemiBold" Text="{Binding Name}" Padding="3" />
-							<TextBlock FontWeight="SemiLight" Text="{Binding Uri}" Padding="2" />
-						</StackPanel>
-						<Button Content="⏵	" Margin="10" DockPanel.Dock="Right" 
-								Command="{Binding ((vm:MainWindowViewModel)DataContext).SendRequestAsync, RelativeSource={RelativeSource AncestorType=Window}}"
-								CommandParameter="{Binding}"
+		<DockPanel Grid.Column="0" LastChildFill="True">
+			<ComboBox DockPanel.Dock="Top" ItemsSource="{Binding Configs}" HorizontalAlignment="Stretch"
+					  SelectedItem="{Binding ((vm:MainWindowViewModel)DataContext).BloopConfig, RelativeSource={RelativeSource AncestorType=Window}}">
+				<ComboBox.ItemTemplate>
+					<DataTemplate>
+						<TextBlock Text="{Binding Directory}" />
+					</DataTemplate>
+				</ComboBox.ItemTemplate>
+			</ComboBox>
+			<ListBox ItemsSource="{Binding BloopConfig.Requests}" SelectedItem="{Binding SelectedRequest}" DockPanel.Dock="Bottom">
+				<ListBox.ItemTemplate>
+					<DataTemplate>
+						<DockPanel LastChildFill="True">
+							<StackPanel DockPanel.Dock="Left">
+								<TextBlock FontWeight="SemiBold" Text="{Binding Name}" Padding="3" />
+								<TextBlock FontWeight="SemiLight" Text="{Binding Uri}" Padding="2" />
+							</StackPanel>
+							<Button Content="⏵	" Margin="10" DockPanel.Dock="Right"
+									Command="{Binding ((vm:MainWindowViewModel)DataContext).SendRequestAsync, RelativeSource={RelativeSource AncestorType=Window}}"
+									CommandParameter="{Binding}"
 								/>
-					</DockPanel>
-				</DataTemplate>
-			</ListBox.ItemTemplate>
-		</ListBox>
+						</DockPanel>
+					</DataTemplate>
+				</ListBox.ItemTemplate>
+			</ListBox>
+		</DockPanel>
 		<GridSplitter Grid.Column="1" ResizeDirection="Columns" />
 		<AvaloniaEdit:TextEditor Grid.Column="2" 
 								 Document="{Binding RequestResultDocument}"

@@ -5,6 +5,8 @@ namespace Bloop.Core;
 
 public record Config
 {
+    [IgnoreDataMember]
+    public string Directory { get; set; } = "";
     public List<Request> Requests { get; set; } = new();
     public List<Variable> Variables { get; set; } = new();
     public Defaults Defaults { get; set; } = new();

@@ -11,6 +11,7 @@ public class DesignMainViewModel : MainWindowViewModel
         {
             new()
             {
+                Directory = "/path",
                 Requests = new List<Request>
                 {
                     new()

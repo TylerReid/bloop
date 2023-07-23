@@ -41,43 +41,6 @@ public class VariableHandler
         .Where(x => x.Value is string)
         .ToList();
 
-    public static async Task<Either<Unit, Error>> RunCommand(Variable variable)
-    {
-        if (variable.Command == null)
-        {
-            return new Error("variable command was unexpectedly null");
-        }
-
-        var process = new Process
-        {
-            StartInfo = new ProcessStartInfo
-            {
-                FileName = variable.Command,
-                Arguments = variable.CommandArgs,
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-            },
-        };
-
-        try
-        {
-            process.Start();
-            await process.WaitForExitAsync();
-            if (process.ExitCode != 0)
-            {
-                return new Error($"variable command exited with code {process.ExitCode} and output:\n{await process.StandardError.ReadToEndAsync()}");
-            }
-
-            variable.Value = await process.StandardOutput.ReadToEndAsync();
-
-            return Unit.Instance;
-        }
-        catch (Exception e)
-        {
-            return new Error($"error running variable command: {e.Message}");
-        }
-    }
-
     public static async Task<Either<Unit, Error>> SatisfyVariables(Blooper blooper, Config config, Request request)
     {
         var variables = GetVariables(config.Defaults, request);
@@ -157,5 +120,44 @@ public class VariableHandler
         }
 
         return Unit.Instance;
+    }
+
+    private static async Task<Either<Unit, Error>> RunCommand(Variable variable)
+    {
+        if (variable.Command == null)
+        {
+            return new Error("variable command was unexpectedly null");
+        }
+
+        var process = new Process
+        {
+            StartInfo = new ProcessStartInfo
+            {
+                FileName = variable.Command,
+                Arguments = variable.CommandArgs,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true,
+                UseShellExecute = false,
+            },
+        };
+
+        try
+        {
+            process.Start();
+            await process.WaitForExitAsync();
+            if (process.ExitCode != 0)
+            {
+                return new Error($"variable command exited with code {process.ExitCode} and output:\n{await process.StandardError.ReadToEndAsync()}");
+            }
+
+            variable.Value = await process.StandardOutput.ReadToEndAsync();
+
+            return Unit.Instance;
+        }
+        catch (Exception e)
+        {
+            return new Error($"error running variable command: {e.Message}");
+        }
     }
 }
