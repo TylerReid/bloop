@@ -43,7 +43,7 @@
 				<ListBox.ItemTemplate>
 					<DataTemplate>
 						<DockPanel LastChildFill="True">
-							<Button Content="⏵	" Margin="10" DockPanel.Dock="Left"
+							<Button Content="❯	" Margin="10" DockPanel.Dock="Left"
 									Command="{Binding ((vm:MainWindowViewModel)DataContext).SendRequestAsync, RelativeSource={RelativeSource AncestorType=Window}}"
 									CommandParameter="{Binding}"
 								/>

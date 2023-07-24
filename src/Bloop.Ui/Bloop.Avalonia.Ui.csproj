@@ -12,10 +12,6 @@
   <ItemGroup>
     <AvaloniaResource Include="Assets\**" />
   </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="Assets\blooper.ico" />
-  </ItemGroup>
   
   <ItemGroup>
     <EmbeddedResource Include="Resources\json.xshd" />

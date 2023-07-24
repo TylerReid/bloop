@@ -18,7 +18,7 @@ public class MainWindowViewModel : ViewModelBase
     [Reactive] public Config? BloopConfig { get; set; }
     [Reactive] public Request? SelectedRequest { get ; set; }
     [Reactive] public RequestResult? RequestResult { get; set; }
-    [Reactive] public TextDocument? RequestResultDocument { get; set; }
+    [Reactive] public TextDocument RequestResultDocument { get; set; } = new();
     [Reactive] public IHighlightingDefinition SyntaxHighlighting { get; set; }
 
     public MainWindowViewModel()
