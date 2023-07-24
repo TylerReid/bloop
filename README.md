@@ -86,6 +86,8 @@ command = "./scripts/testVariableScript.ps1"
   * read the contents of a file
 #### env
   * environment variables
+#### value_lifetime
+  * optional timespan after which a new value will be retrieved. In the format `HH:MM:SS` Useful for token expiration.
 
 ## Default values
 ```toml

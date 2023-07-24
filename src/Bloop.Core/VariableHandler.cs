@@ -53,6 +53,8 @@ public class VariableHandler
                 return new Error($"variable {v} is used in request {request.Uri} but is not defined as a variable");
             }
 
+            variable.ClearIfExpired();
+
             if (variable.Value != null)
             {
                 continue;

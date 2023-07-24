@@ -65,3 +65,11 @@ file = "testfile.txt"
 env = "notarealthing"
 file = "nope.json"
 default = "this is a default value"
+
+[request.random]
+uri = "http://localhost:5284/echo/query?something=${random}"
+
+[variable.random]
+command = "pwsh"
+command_args = "random.ps1"
+value_lifetime = "00:01:00"

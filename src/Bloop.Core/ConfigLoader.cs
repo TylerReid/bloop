@@ -49,50 +49,6 @@ public class ConfigLoader
         return Toml.ToModel<MetaConfig>(content, options: Options());
     }
 
-    public static Either<Config, Error> LoadConfig(string path)
-    {
-        try
-        {
-            string content;
-            if (Directory.Exists(path))
-            {
-                var combinedText = new StringBuilder();
-                foreach (var file in Directory.EnumerateFiles(path, "*.toml"))
-                {
-                    combinedText.AppendLine(File.ReadAllText(file));
-                }
-                content = combinedText.ToString();
-            }
-            else
-            {
-                content = File.ReadAllText(path);
-            }
-
-            return Toml.ToModel<SerializationConfig>(content, options: Options()).ToConfig(path);
-        }
-        catch (FileNotFoundException e)
-        {
-            return new Error(e.Message);
-        }
-        catch (Exception e)
-        {
-            return new Error($"Could not load config file at {path}. {e.Message}");
-        }
-    }
-
-    public static MetaConfig LoadMetaConfig()
-    {
-        var homeDir = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var globalConfigFilePath = Path.Join(homeDir, ".bloop.toml");
-        if (!File.Exists(globalConfigFilePath))
-        {
-            return new MetaConfig();
-        }
-
-        var content = File.ReadAllText(globalConfigFilePath);
-        return Toml.ToModel<MetaConfig>(content, options: Options());
-    }
-
     private static TomlModelOptions Options() => new()
     {
         IgnoreMissingProperties = true,
@@ -103,10 +59,12 @@ public class ConfigLoader
     {
         if (value is not string s) {
             return null;
-        }
+        }       
+
         return type switch {
             var t when t == typeof(Uri) => new Uri(s),
             var t when t == typeof(HttpMethod) => new HttpMethod(s),
+            var t when t == typeof(TimeSpan) => TimeSpan.Parse(s),
             _ => null,
         };
     }

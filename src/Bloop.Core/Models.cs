@@ -40,6 +40,7 @@ public record Variable : INotifyPropertyChanged
         set
         {
             _value = value;
+            ValueDateTime = DateTime.UtcNow;
             OnPropertyChanged();
         } 
     }
@@ -49,10 +50,25 @@ public record Variable : INotifyPropertyChanged
     public string? File { get; set; }
     public string? Env { get; set; }
     public string? Default { get; set; }
+    public TimeSpan? ValueLifetime { get; set; }
+    [IgnoreDataMember]
+    public DateTime? ValueDateTime { get; set; }
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
     public override string ToString() => ModelHelper.ToString(this);
+
+    public bool IsExpired() => ValueLifetime.HasValue 
+            && ValueDateTime.HasValue 
+            && ValueDateTime.Value.Add(ValueLifetime.Value) < DateTime.UtcNow;
+
+    public void ClearIfExpired()
+    {
+        if (IsExpired())
+        {
+            Value = null;
+        }
+    }
 
     protected void OnPropertyChanged([CallerMemberName] string? name = null)
     {
