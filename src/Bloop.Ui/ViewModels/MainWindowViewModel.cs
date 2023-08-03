@@ -23,7 +23,7 @@ public class MainWindowViewModel : ViewModelBase
 
     public MainWindowViewModel()
     {
-        SetHighlighting(".txt");
+        SyntaxHighlighting = GetHighlighting(".txt");
         _ = LoadAsync();
     }
 
@@ -36,12 +36,12 @@ public class MainWindowViewModel : ViewModelBase
         RequestResultDocument = await result.MatchAsync(async response => 
         {
             RequestResult = new(request, response);
-            SetHighlighting("json");
+            SyntaxHighlighting = GetHighlighting("json");
             return await CreateDocument(response);
         }, 
         error => 
         {
-            SetHighlighting("txt");
+            SyntaxHighlighting = GetHighlighting("txt");
             return Task.FromResult(new TextDocument(error.Message));
         });
     }
@@ -72,12 +72,9 @@ public class MainWindowViewModel : ViewModelBase
         return new TextDocument(content);
     }
 
-    private void SetHighlighting(string language)
+    private IHighlightingDefinition GetHighlighting(string language) => language switch
     {
-        SyntaxHighlighting = language switch
-        {
-            "json" => HighlightingManager.Instance.GetBloopDefinition(language),
-            _ => HighlightingManager.Instance.GetDefinition(language),
-        };
-    }
+        "json" => HighlightingManager.Instance.GetBloopDefinition(language),
+        _ => HighlightingManager.Instance.GetDefinition(language),
+    };
 }

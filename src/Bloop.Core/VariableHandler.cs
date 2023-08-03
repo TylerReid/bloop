@@ -3,9 +3,9 @@ using System.Diagnostics;
 
 namespace Bloop.Core;
 
-public class VariableHandler
+public partial class VariableHandler
 {
-    private static readonly Regex VarRegex = new Regex(@"\${(?<var>\w+)}", RegexOptions.Compiled);
+    private static readonly Regex VarRegex = VariableRegex();
 
     public static List<string> GetVariables(string s) => VarRegex.Matches(s)
         .Select(x => x.Groups["var"])
@@ -21,14 +21,14 @@ public class VariableHandler
         .Distinct()
         .ToList();
 
-    public static string ExpandVariables(string original, Config config) => 
+    public static string? ExpandVariables(string? original, Config config) =>
         ExpandVariables(original, config.Variables.ToDictionary(x => x.Name, x => x.Value!));
 
-    public static string ExpandVariables(string original, Dictionary<string, string> mappings)
+    public static string? ExpandVariables(string? original, Dictionary<string, string> mappings)
     {
         foreach (var (name, value) in mappings)
         {
-            original = original.Replace($"${{{name}}}", value);
+            original = original?.Replace($"${{{name}}}", value);
         }
         return original;
     }
@@ -43,85 +43,106 @@ public class VariableHandler
 
     public static async Task<Either<Unit, Error>> SatisfyVariables(Blooper blooper, Config config, Request request)
     {
+        // todo make this not dumb.
+        // probably need to create a dependency graph of the variables and requests and verify there are no cycles
+        // then we can satisfy them in a reasonable order
         var variables = GetVariables(config.Defaults, request);
         foreach (var v in variables)
         {
             var variable = config.Variables.SingleOrDefault(x => x.Name == v);
-
             if (variable == null)
             {
                 return new Error($"variable {v} is used in request {request.Uri} but is not defined as a variable");
             }
-
-            variable.ClearIfExpired();
-
-            if (variable.Value != null)
+            var result = await SatisfyVariable(blooper, config, request.Name, variable);
+            if (result != null)
             {
-                continue;
+                return result;
             }
-
-            if (variable.Jpath != null && variable.Source != null)
-            {
-                // if the source is this request, don't bloop because that will cause infinite loop
-                // one legitimate way to end up in this scenario is with default headers
-                if (request.Name == variable.Source)
-                {
-                    continue;
-                }
-                var response = await blooper.SendRequest(config, variable.Source);
-                if (response.Unwrap() is Error e)
-                {
-                    return e;
-                }
-                continue;
-            }
-
-            if (variable.Command != null)
-            {
-                var commandResult = await RunCommand(variable);
-                if (commandResult.Unwrap() is Error e)
-                {
-                    return e;
-                }
-                continue;
-            }
-
-            if (variable.Env != null)
-            {
-                variable.Value = Environment.GetEnvironmentVariable(variable.Env);
-                if (variable.Value != null)
-                {
-                    continue;
-                }
-            }
-
-            if (variable.File != null)
-            {
-                try
-                {
-                    variable.Value = await File.ReadAllTextAsync(variable.File);
-                    continue;
-                }
-                catch (Exception e) when (variable.Default == null)
-                {
-                    return new Error($"error loading variable from file {variable.File}: {e.Message}");
-                }
-                catch (FileNotFoundException)
-                {
-                    //ignore because we have a default
-                }
-            }
-
-            if (variable.Default != null)
-            {
-                variable.Value = variable.Default;
-                continue;
-            }
-
-            return new Error($"variable {v} does not have a value, file, jpath, or command defined");
         }
 
         return Unit.Instance;
+    }
+
+    private static async Task<Error?> SatisfyVariable(Blooper blooper, Config config, string sourceName, Variable variable)
+    {
+        variable.ClearIfExpired();
+
+        if (variable.Value != null)
+        {
+            return null;
+        }
+
+        if (variable.Jpath != null && variable.Source != null)
+        {
+            // if the source is this request, don't bloop because that will cause infinite loop
+            // one legitimate way to end up in this scenario is with default headers
+            if (sourceName == variable.Source)
+            {
+                return null;
+            }
+            var response = await blooper.SendRequest(config, variable.Source);
+            if (response.Unwrap() is Error e)
+            {
+                return e;
+            }
+            return null;
+        }
+
+        if (variable.Command != null)
+        {
+            var commandResult = await RunCommand(variable);
+            if (commandResult.Unwrap() is Error e)
+            {
+                return e;
+            }
+            return null;
+        }
+
+        if (variable.Env != null)
+        {
+            variable.Value = Environment.GetEnvironmentVariable(variable.Env);
+            if (variable.Value != null)
+            {
+                return null;
+            }
+        }
+
+        if (variable.File != null)
+        {
+            try
+            {
+                variable.Value = await File.ReadAllTextAsync(variable.File);
+                return null;
+            }
+            catch (Exception e) when (variable.Default == null)
+            {
+                return new Error($"error loading variable from file {variable.File}: {e.Message}");
+            }
+            catch (FileNotFoundException)
+            {
+                //ignore because we have a default
+            }
+        }
+
+        if (variable.Default != null)
+        {
+            var variableVariables = GetVariables(variable.Default);
+            foreach (var variableVariable in UnsatisfiedVariables(config).Where(x => variableVariables.Contains(x.Name)))
+            {
+                var result = await SatisfyVariable(blooper, config, variable.Name, variableVariable);
+                if (result != null)
+                {
+                    return result;
+                }
+            }
+
+            variable.Value = ExpandVariables(variable.Default, config);
+            
+            return null;
+        }
+
+        return new Error($"variable {variable.Name} does not have a value, file, jpath, or command defined");
     }
 
     private static async Task<Either<Unit, Error>> RunCommand(Variable variable)
@@ -162,4 +183,7 @@ public class VariableHandler
             return new Error($"error running variable command: {e.Message}");
         }
     }
+
+    [GeneratedRegex("\\${(?<var>\\w+)}", RegexOptions.Compiled)]
+    private static partial Regex VariableRegex();
 }

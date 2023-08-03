@@ -37,19 +37,22 @@ public class Blooper
 
         if (request.Form != null)
         {
-            var form = new Dictionary<string, string>();
+            var form = new Dictionary<string, string?>();
             foreach (var (k, v) in request.Form)
             {
                 var key = VariableHandler.ExpandVariables(k, config);
                 var value = VariableHandler.ExpandVariables(v, config);
-                form[key] = value;
+                if (key != null)
+                {
+                    form[key] = value;
+                }
             }
             httpRequest.Content = new FormUrlEncodedContent(form);
         } 
         else if (request.Body != null)
         {
             httpRequest.Content = new StringContent(
-                VariableHandler.ExpandVariables(request.Body, config), 
+                VariableHandler.ExpandVariables(request.Body, config) ?? "", 
                 System.Text.Encoding.UTF8, 
                 request.ContentType ?? "application/json"
             );

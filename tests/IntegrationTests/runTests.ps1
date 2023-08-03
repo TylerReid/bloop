@@ -133,6 +133,12 @@ Write-Host $echo
 
 Assert "this is a default value" $echo
 
+$echo = ./bloop 'variableVariable'
+Write-Host "`nbloop variableVariable output:"
+Write-Host $echo
+
+Assert "blorp" $echo
+
 $testJob | Stop-Job
 Remove-Item ./bloop.exe -ErrorAction SilentlyContinue
 Remove-Item ./bloop -ErrorAction SilentlyContinue
