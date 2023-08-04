@@ -1,14 +1,14 @@
 ﻿using AvaloniaEdit.Document;
 using AvaloniaEdit.Highlighting;
-using Bloop.Avalonia.Ui.Models;
-using Bloop.Avalonia.Ui.Resources;
+using Bloop.Ui.Models;
+using Bloop.Ui.Resources;
 using Bloop.Core;
 using ReactiveUI.Fody.Helpers;
 using System.Collections.ObjectModel;
 using System.Net.Http.Json;
 using System.Text.Json;
 
-namespace Bloop.Avalonia.Ui.ViewModels;
+namespace Bloop.Ui.ViewModels;
 
 public class MainWindowViewModel : ViewModelBase
 {

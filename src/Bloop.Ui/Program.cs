@@ -1,7 +1,7 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
 
-namespace Bloop.Avalonia.Ui;
+namespace Bloop.Ui;
 
 class Program
 {

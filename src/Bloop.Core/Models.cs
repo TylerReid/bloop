@@ -28,7 +28,7 @@ public record Request
     public override string ToString() => ModelHelper.ToString(this);
 }
 
-public record Variable : INotifyPropertyChanged
+public record Variable : Notifier
 {
     [IgnoreDataMember]
     public string Name { get; set; } = "";
@@ -54,26 +54,13 @@ public record Variable : INotifyPropertyChanged
     [IgnoreDataMember]
     public DateTime? ValueDateTime { get; set; }
 
-    public event PropertyChangedEventHandler? PropertyChanged;
-
     public override string ToString() => ModelHelper.ToString(this);
 
     public bool IsExpired() => ValueLifetime.HasValue 
             && ValueDateTime.HasValue 
             && ValueDateTime.Value.Add(ValueLifetime.Value) < DateTime.UtcNow;
 
-    public void ClearIfExpired()
-    {
-        if (IsExpired())
-        {
-            Value = null;
-        }
-    }
-
-    protected void OnPropertyChanged([CallerMemberName] string? name = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-    }
+    public void ClearIfExpired() => Value = IsExpired() ? null : Value;
 }
 
 public record Defaults
@@ -135,5 +122,15 @@ public class Error
     public Error(string message)
     {
         Message = message;
+    }
+}
+
+public record Notifier : INotifyPropertyChanged
+{
+    public event PropertyChangedEventHandler? PropertyChanged;
+    
+    protected void OnPropertyChanged([CallerMemberName] string? name = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }

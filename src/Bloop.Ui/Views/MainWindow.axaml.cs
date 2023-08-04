@@ -1,6 +1,6 @@
 using Avalonia.Controls;
 
-namespace Bloop.Avalonia.Ui.Views;
+namespace Bloop.Ui.Views;
 
 public partial class MainWindow : Window
 {

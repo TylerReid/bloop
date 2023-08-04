@@ -1,6 +1,6 @@
 ﻿using ReactiveUI;
 
-namespace Bloop.Avalonia.Ui.ViewModels;
+namespace Bloop.Ui.ViewModels;
 
 public class ViewModelBase : ReactiveObject
 {

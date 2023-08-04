@@ -1,10 +1,10 @@
 using Avalonia;
 using Avalonia.Controls.ApplicationLifetimes;
 using Avalonia.Markup.Xaml;
-using Bloop.Avalonia.Ui.ViewModels;
-using Bloop.Avalonia.Ui.Views;
+using Bloop.Ui.ViewModels;
+using Bloop.Ui.Views;
 
-namespace Bloop.Avalonia.Ui;
+namespace Bloop.Ui;
 
 public partial class App : Application
 {

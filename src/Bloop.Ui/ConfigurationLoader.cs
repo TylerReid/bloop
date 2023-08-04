@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using Bloop.Core;
 
-namespace Bloop.Avalonia.Ui;
+namespace Bloop.Ui;
 
 public static class ConfigurationLoader
 {

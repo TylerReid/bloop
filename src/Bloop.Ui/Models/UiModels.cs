@@ -3,7 +3,7 @@ using ReactiveUI;
 using ReactiveUI.Fody.Helpers;
 using System.Collections.ObjectModel;
 
-namespace Bloop.Avalonia.Ui.Models;
+namespace Bloop.Ui.Models;
 
 public class RequestResult : ReactiveObject
 {
@@ -26,7 +26,7 @@ public class RequestResult : ReactiveObject
     public RequestResult(Request request, HttpResponseMessage response)
     {
         Request = request;
-        Status = response.StatusCode.ToString();
+        Status = $"{(int)response.StatusCode} {response.StatusCode.ToString()}";
         var headerStrings = response.Headers
             .Select(x => $"{x.Key}: {x.Value.Aggregate((a, b) => $"{a} {b}")}")
             .ToList();

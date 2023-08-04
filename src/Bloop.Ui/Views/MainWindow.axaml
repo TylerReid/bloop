@@ -1,14 +1,14 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:vm="using:Bloop.Avalonia.Ui.ViewModels"
+        xmlns:vm="using:Bloop.Ui.ViewModels"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
 		xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-        x:Class="Bloop.Avalonia.Ui.Views.MainWindow"
+        x:Class="Bloop.Ui.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
         Icon="/Assets/blooper.ico"
-        Title="Bloop.Avalonia.Ui">
+        Title="Bloop!">
 
     <Design.DataContext>
         <!-- This only sets the DataContext for the previewer in an IDE,
@@ -49,7 +49,10 @@
 								/>
 							<StackPanel DockPanel.Dock="Right">
 								<TextBlock FontWeight="SemiBold" Text="{Binding Name}" Padding="3" />
-								<TextBlock FontWeight="SemiLight" Text="{Binding Uri}" Padding="2" />
+								<StackPanel Orientation="Horizontal">
+									<TextBlock FontWeight="SemiBold" Text="{Binding Method}" />
+									<TextBlock FontWeight="SemiLight" Text="{Binding Uri}" Padding="2" />
+								</StackPanel>
 							</StackPanel>
 						</DockPanel>
 					</DataTemplate>
@@ -58,21 +61,27 @@
 		</DockPanel>
 		<GridSplitter Grid.Column="1" ResizeDirection="Columns" />
 		<DockPanel Grid.Column="2" LastChildFill="True">
-			<StackPanel Orientation="Vertical" DockPanel.Dock="Top" Margin="5">
-				<StackPanel Orientation="Horizontal" Margin="5,0,0,0">
-					<TextBlock Text="Status: " FontWeight="SemiBold"/>
-					<TextBlock Text="{Binding RequestResult.Status}"/>
+			<DockPanel DockPanel.Dock="Top" Margin="5,0,0,0" LastChildFill="True">
+				<StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
+					<Button Content="Headers">
+						<Button.Flyout>
+							<Flyout>
+								<ListBox ItemsSource="{Binding RequestResult.Headers}">
+									<ListBox.ItemTemplate>
+										<DataTemplate>
+											<TextBlock Text="{Binding}"/>
+										</DataTemplate>
+									</ListBox.ItemTemplate>
+								</ListBox>
+							</Flyout>
+						</Button.Flyout>
+					</Button>
 				</StackPanel>
-				<Expander Header="Details">
-					<ListBox ItemsSource="{Binding RequestResult.Headers}">
-						<ListBox.ItemTemplate>
-							<DataTemplate>
-								<TextBlock Text="{Binding}"/>
-							</DataTemplate>
-						</ListBox.ItemTemplate>
-					</ListBox>
-				</Expander>
-			</StackPanel>
+				<StackPanel Orientation="Horizontal" DockPanel.Dock="Left">
+					<TextBlock Text="Status: " FontWeight="SemiBold" VerticalAlignment="Center"/>
+					<TextBlock Text="{Binding RequestResult.Status}" VerticalAlignment="Center"/>
+				</StackPanel>
+			</DockPanel>
 			<AvaloniaEdit:TextEditor DockPanel.Dock="Bottom"
 								 Document="{Binding RequestResultDocument}"
 								 ShowLineNumbers="True"

@@ -13,7 +13,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{C23DE76A
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestApi", "tests\TestApi\TestApi.csproj", "{C2EF2D99-5FD0-46D4-9D59-218C0935C3AD}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bloop.Avalonia.Ui", "src\Bloop.Ui\Bloop.Avalonia.Ui.csproj", "{EA5D6E3E-D1E6-48A7-A7D7-3848847724A1}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Bloop.Ui", "src\Bloop.Ui\Bloop.Ui.csproj", "{EA5D6E3E-D1E6-48A7-A7D7-3848847724A1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

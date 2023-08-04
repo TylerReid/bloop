@@ -1,8 +1,8 @@
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
-using Bloop.Avalonia.Ui.ViewModels;
+using Bloop.Ui.ViewModels;
 
-namespace Bloop.Avalonia.Ui;
+namespace Bloop.Ui;
 
 public class ViewLocator : IDataTemplate
 {

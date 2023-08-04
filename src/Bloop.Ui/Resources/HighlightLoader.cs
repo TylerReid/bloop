@@ -4,7 +4,7 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using System.Xml;
 
-namespace Bloop.Avalonia.Ui.Resources;
+namespace Bloop.Ui.Resources;
 
 internal static class HighlightLoader
 {

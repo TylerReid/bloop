@@ -1,7 +1,7 @@
 using System.Collections.ObjectModel;
 using Bloop.Core;
 
-namespace Bloop.Avalonia.Ui.ViewModels;
+namespace Bloop.Ui.ViewModels;
 
 public class DesignMainViewModel : MainWindowViewModel
 {
