@@ -2,10 +2,12 @@ using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace Bloop.Core;
 
-public record Config
+public record Config : BaseModel
 {
     [IgnoreDataMember]
     public string Directory { get; set; } = "";
@@ -14,7 +16,7 @@ public record Config
     public Defaults Defaults { get; set; } = new();
 }
 
-public record Request
+public record Request : BaseModel
 {
     [IgnoreDataMember]
     public string Name { get; set; } = "";
@@ -24,11 +26,9 @@ public record Request
     public string? ContentType { get; set; }
     public Dictionary<string, string>? Form { get; set; }
     public Dictionary<string, string> Headers { get; set;} = new();
-
-    public override string ToString() => ModelHelper.ToString(this);
 }
 
-public record Variable : Notifier
+public record Variable : BaseModel
 {
     [IgnoreDataMember]
     public string Name { get; set; } = "";
@@ -54,8 +54,6 @@ public record Variable : Notifier
     [IgnoreDataMember]
     public DateTime? ValueDateTime { get; set; }
 
-    public override string ToString() => ModelHelper.ToString(this);
-
     public bool IsExpired() => ValueLifetime.HasValue 
             && ValueDateTime.HasValue 
             && ValueDateTime.Value.Add(ValueLifetime.Value) < DateTime.UtcNow;
@@ -63,29 +61,52 @@ public record Variable : Notifier
     public void ClearIfExpired() => Value = IsExpired() ? null : Value;
 }
 
-public record Defaults
+public record Defaults : BaseModel
 {
     public Dictionary<string, string> Headers { get; set; } = new();
 }
 
-public record MetaConfig
+public record MetaConfig : BaseModel
 {
     public List<string> BloopDirectories { get; set; } = new();
 }
 
-public class ModelHelper
+public class Error
 {
+    public string Message { get; }
+    
+    public Error(string message)
+    {
+        Message = message;
+    }
+}
+
+public record BaseModel : INotifyPropertyChanged
+{
+    [IgnoreDataMember]
+    [JsonIgnore]
+    public string Toml => Tomlyn.Toml.FromModel(this);
+    [IgnoreDataMember]
+    [JsonIgnore]
+    public string Json => JsonSerializer.Serialize(this, GetType(), new JsonSerializerOptions { WriteIndented = true, });
+    
+    public event PropertyChangedEventHandler? PropertyChanged;
+    
+    protected void OnPropertyChanged([CallerMemberName] string? name = null)
+    {
+        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+    }
+
     // this is dumb but fun
-    public static string ToString<T>(T obj)
+    public override string ToString()
     {
         var sb = new StringBuilder();
         sb.Append("{ ");
 
         var comma = "";
-        var type = typeof(T);
-        foreach (var property in type.GetProperties())
+        foreach (var property in GetType().GetProperties())
         {
-            var value = property.GetValue(obj);
+            var value = property.GetValue(this);
             if (value == null)
             {
                 continue;
@@ -112,25 +133,5 @@ public class ModelHelper
 
         sb.Append(" }");
         return sb.ToString();
-    }
-}
-
-public class Error
-{
-    public string Message { get; }
-    
-    public Error(string message)
-    {
-        Message = message;
-    }
-}
-
-public record Notifier : INotifyPropertyChanged
-{
-    public event PropertyChangedEventHandler? PropertyChanged;
-    
-    protected void OnPropertyChanged([CallerMemberName] string? name = null)
-    {
-        PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
     }
 }

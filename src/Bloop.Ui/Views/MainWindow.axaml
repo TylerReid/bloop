@@ -47,13 +47,20 @@
 									Command="{Binding ((vm:MainWindowViewModel)DataContext).SendRequestAsync, RelativeSource={RelativeSource AncestorType=Window}}"
 									CommandParameter="{Binding}"
 								/>
-							<StackPanel DockPanel.Dock="Right">
-								<TextBlock FontWeight="SemiBold" Text="{Binding Name}" Padding="3" />
-								<StackPanel Orientation="Horizontal">
-									<TextBlock FontWeight="SemiBold" Text="{Binding Method}" />
-									<TextBlock FontWeight="SemiLight" Text="{Binding Uri}" Padding="2" />
+							<DockPanel DockPanel.Dock="Right" LastChildFill="True">
+								<StackPanel DockPanel.Dock="Left">
+									<StackPanel.ContextFlyout>
+										<Flyout>
+											<TextBlock Text="{Binding Json}"/>
+										</Flyout>
+									</StackPanel.ContextFlyout>
+									<TextBlock FontWeight="Bold" Text="{Binding Name}" Padding="3" />
+									<StackPanel Orientation="Horizontal">
+										<TextBlock FontWeight="SemiBold" Text="{Binding Method}" />
+										<TextBlock FontWeight="SemiLight" Text="{Binding Uri}" Padding="2" />
+									</StackPanel>
 								</StackPanel>
-							</StackPanel>
+							</DockPanel>
 						</DockPanel>
 					</DataTemplate>
 				</ListBox.ItemTemplate>
