@@ -38,9 +38,10 @@ public class MainWindowViewModel : ViewModelBase
             RequestResult = new(request, response);
             SyntaxHighlighting = GetHighlighting("json");
             return await CreateDocument(response);
-        }, 
+        },
         error => 
         {
+            RequestResult = new(request, error);
             SyntaxHighlighting = GetHighlighting("txt");
             return Task.FromResult(new TextDocument(error.Message));
         });

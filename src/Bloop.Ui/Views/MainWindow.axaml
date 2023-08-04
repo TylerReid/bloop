@@ -57,11 +57,29 @@
 			</ListBox>
 		</DockPanel>
 		<GridSplitter Grid.Column="1" ResizeDirection="Columns" />
-		<AvaloniaEdit:TextEditor Grid.Column="2" 
+		<DockPanel Grid.Column="2" LastChildFill="True">
+			<StackPanel Orientation="Vertical" DockPanel.Dock="Top" Margin="5">
+				<StackPanel Orientation="Horizontal" Margin="5,0,0,0">
+					<TextBlock Text="Status: " FontWeight="SemiBold"/>
+					<TextBlock Text="{Binding RequestResult.Status}"/>
+				</StackPanel>
+				<Expander Header="Details">
+					<ListBox ItemsSource="{Binding RequestResult.Headers}">
+						<ListBox.ItemTemplate>
+							<DataTemplate>
+								<TextBlock Text="{Binding}"/>
+							</DataTemplate>
+						</ListBox.ItemTemplate>
+					</ListBox>
+				</Expander>
+			</StackPanel>
+			<AvaloniaEdit:TextEditor DockPanel.Dock="Bottom"
 								 Document="{Binding RequestResultDocument}"
 								 ShowLineNumbers="True"
 								 SyntaxHighlighting="{Binding SyntaxHighlighting}"
 								/>
+		</DockPanel>
+		
 	</Grid>
 
 </Window>
