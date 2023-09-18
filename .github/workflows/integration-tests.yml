@@ -6,5 +6,7 @@ jobs:
     runs-on: ubuntu-latest
     container: mcr.microsoft.com/dotnet/sdk:7.0-jammy
     steps:
+      - name: Checkout Project
+        uses: actions/checkout@v4
       - name: run integration tests
-        run: pwsh ./tests/IntegrationTests/runTests.ps1
+        run: ./tests/IntegrationTests/runTests.ps1
