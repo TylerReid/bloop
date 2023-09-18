@@ -1,0 +1,4 @@
+FROM mcr.microsoft.com/dotnet/sdk:7.0-jammy
+WORKDIR /app
+COPY . .
+RUN ["pwsh", "./tests/IntegrationTests/runTests.ps1"]

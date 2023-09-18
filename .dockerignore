@@ -1,0 +1,7 @@
+bin/
+obj/
+out/
+TestResults/
+.idea/
+.vscode/
+releases/

@@ -1,0 +1,10 @@
+name: "Integration Tests"
+run-name: "Integration Tests 🚀"
+on: [push]
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    container: mcr.microsoft.com/dotnet/sdk:7.0-jammy
+    steps:
+      - name: run integration tests
+        run: pwsh ./tests/IntegrationTests/runTests.ps1

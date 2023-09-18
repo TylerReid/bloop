@@ -17,7 +17,7 @@ Set-Location $PSScriptRoot
 Write-Host "Starting test server"
 $testJob = Start-Job -ScriptBlock {
     Set-Location ../TestApi
-    dotnet run
+    dotnet run --urls=http://localhost:5284/
 }
 
 dotnet publish ../../src/Bloop.Cli/Bloop.Cli.csproj --nologo `
