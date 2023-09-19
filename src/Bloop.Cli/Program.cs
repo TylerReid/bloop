@@ -3,6 +3,8 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using CommandLine;
 using Error = Bloop.Core.Error;
+using Terminal.Gui;
+using Bloop.Cli.Ui;
 
 namespace Bloop.Cli;
 
@@ -27,6 +29,10 @@ public class Program
 
         if (parsedArgs.Value is RequestOptions request)
         {
+            if (string.IsNullOrEmpty(request.RequestName))
+            {
+                return await RunUi(request);
+            }
             return await Run(request);
         }
 
@@ -45,6 +51,14 @@ public class Program
         Output.WriteLine(parsedArgs.Value.GetType());
 
         return 1;
+    }
+
+    private static async Task<int> RunUi(RequestOptions request)
+    {
+        Application.QuitKey = Key.C | Key.CtrlMask;
+        Application.Run<MainWindow>();
+        Application.Shutdown();
+        return 0;
     }
 
     private static async Task<int> Validate(ValidateOptions options)

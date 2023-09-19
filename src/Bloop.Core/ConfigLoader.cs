@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Text;
 using Tomlyn;
 
@@ -5,6 +6,8 @@ namespace Bloop.Core;
 
 public class ConfigLoader
 {
+    private static readonly char PathListSeparator = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? ';' : ':';
+
     public static async Task<Either<Config, Error>> LoadConfigAsync(string path)
     {
         try
@@ -47,6 +50,24 @@ public class ConfigLoader
 
         var content = await File.ReadAllTextAsync(globalConfigFilePath);
         return Toml.ToModel<MetaConfig>(content, options: Options());
+    }
+
+    public static async Task<List<Config>> LoadConfigsAsync()
+    {
+        var configs = new List<Config>();
+        var envPaths = Environment.GetEnvironmentVariable("BLOOP_CONFIG_DIRS");
+        foreach (var path in envPaths?.Split(PathListSeparator).ToList() ?? await LoadPathsFromProfileAsync())
+        {
+            // todo handle errors
+            configs.Add((await LoadConfigAsync(path)).UnwrapSuccess());
+        }
+        return configs;
+    }
+
+    private static async Task<List<string>> LoadPathsFromProfileAsync()
+    {
+        var meta = await LoadMetaConfigAsync();
+        return meta.BloopDirectories;
     }
 
     private static TomlModelOptions Options() => new()

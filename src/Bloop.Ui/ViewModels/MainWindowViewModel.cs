@@ -49,7 +49,7 @@ public class MainWindowViewModel : ViewModelBase
 
     private async Task LoadAsync()
     {
-        Configs = new(await ConfigurationLoader.LoadConfigsAsync());
+        Configs = new(await ConfigLoader.LoadConfigsAsync());
         BloopConfig = Configs.FirstOrDefault();
     }
 
