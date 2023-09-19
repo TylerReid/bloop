@@ -72,11 +72,11 @@ internal class MainWindow : Toplevel
 
         Directory.SetCurrentDirectory(_selectedConfig.Directory);
         var result = await _blooper.SendRequest(_selectedConfig, _selectedRequest);
-        result.MatchAsync(async response => 
+        _ = result.MatchAsync(async response =>
         {
             RightPane.Text = await response.Content.ReadAsStringAsync();
-        }, 
-        error => 
+        },
+        error =>
         {
             RightPane.Text = error.Message;
             return Task.CompletedTask;
