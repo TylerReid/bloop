@@ -26,7 +26,7 @@ internal class MainWindow : Toplevel
             X = 0, 
             Y = 0,
             Width = Dim.Percent(25),
-            Height = Dim.Fill(),
+            Height = Dim.Fill(1),
             CanFocus = true,
         };
         RightPane = new FrameView("Results")
@@ -34,7 +34,7 @@ internal class MainWindow : Toplevel
             X = Pos.Right(LeftPane),
             Y = 0,
             Width = Dim.Fill(),
-            Height = Dim.Fill(),
+            Height = Dim.Fill(1),
             CanFocus = true,
         };
 
@@ -52,8 +52,22 @@ internal class MainWindow : Toplevel
 
         LeftPane.Add(RequestListView);
 
+        StatusBar = new StatusBar
+        {
+            Visible = true,
+            CanFocus = false,
+            Items = new[]
+            {
+                new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Quit", RequestStop),
+                new StatusItem(Key.V | Key.AltMask, "~Alt-V~ Variables", () =>
+                {
+                }),
+            }
+        };
+
         Add(LeftPane);
         Add(RightPane);
+        Add(StatusBar);
 
         _ = LoadAsync();
     }

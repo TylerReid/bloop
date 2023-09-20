@@ -55,7 +55,6 @@ public class Program
 
     private static async Task<int> RunUi(RequestOptions request)
     {
-        Application.QuitKey = Key.C | Key.CtrlMask;
         Application.Run<MainWindow>();
         Application.Shutdown();
         return 0;
