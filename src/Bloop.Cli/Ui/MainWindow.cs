@@ -1,4 +1,5 @@
 ﻿using Bloop.Core;
+using System.Data;
 using Terminal.Gui;
 
 namespace Bloop.Cli.Ui;
@@ -9,10 +10,13 @@ internal class MainWindow : Toplevel
     private Config? _selectedConfig;
     private Request? _selectedRequest;
     private readonly Blooper _blooper = new();
+    private readonly DataTable _scratchVariables = new();
 
     public FrameView LeftPane { get; set; }
     public ListView RequestListView { get; set; }
     public FrameView RightPane { get; set; }
+    public StatusBar MainStatusBar { get; set; }
+    public StatusBar VariableStatusBar { get; set; }
 
     public MainWindow()
     {
@@ -52,24 +56,82 @@ internal class MainWindow : Toplevel
 
         LeftPane.Add(RequestListView);
 
-        StatusBar = new StatusBar
+        MainStatusBar = new StatusBar
         {
             Visible = true,
             CanFocus = false,
             Items = new[]
             {
                 new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Quit", RequestStop),
-                new StatusItem(Key.V | Key.AltMask, "~Alt-V~ Variables", () =>
-                {
-                }),
-            }
+                new StatusItem(Key.V | Key.AltMask, "~Alt-V~ Variables", SwitchToVariableView),
+            },
         };
 
-        Add(LeftPane);
-        Add(RightPane);
-        Add(StatusBar);
+        VariableStatusBar = new StatusBar
+        {
+            Visible = true,
+            CanFocus = false,
+            Items = new[]
+            {
+                new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Back", SwitchToMainView),
+            },
+        };
+
+        _scratchVariables.Columns.Add("Name", typeof(string));
+        _scratchVariables.Columns.Add("Value", typeof(string));
+
+        SwitchToMainView();
 
         _ = LoadAsync();
+    }
+
+    private void SwitchToMainView()
+    {
+        foreach (DataRow row in _scratchVariables.Rows)
+        {
+            _selectedConfig!.Variables
+                .First(x => x.Name == (string)row["Name"]).Value = (string?)row["Value"];
+        }
+        _scratchVariables.Clear();
+        RemoveAll();
+        Add(LeftPane);
+        Add(RightPane);
+        Add(MainStatusBar);
+    }
+
+    private void SwitchToVariableView()
+    {
+        if (_selectedConfig == null) { return; }
+        RemoveAll();
+
+        var frame = new FrameView("Variables")
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Fill(1),
+            CanFocus = true,
+        };
+
+        foreach (var variable in _selectedConfig.Variables)
+        {
+            _scratchVariables.Rows.Add(variable.Name, variable.Value);
+        }
+
+        var table = new TableView
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+            Table = _scratchVariables,
+        };
+
+        frame.Add(table);
+        // todo add edit dialog for table
+
+        Add(frame);
+        Add(VariableStatusBar);
     }
 
     private void RequestListKeyPressed(KeyEventEventArgs args)
