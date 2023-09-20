@@ -1,5 +1,8 @@
 ﻿using Bloop.Core;
 using System.Data;
+using System.Diagnostics;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Terminal.Gui;
 
 namespace Bloop.Cli.Ui;
@@ -15,7 +18,9 @@ internal class MainWindow : Toplevel
     public FrameView LeftPane { get; set; }
     public ListView RequestListView { get; set; }
     public FrameView RightPane { get; set; }
+    public TextView ResultsView { get; set; }
     public StatusBar MainStatusBar { get; set; }
+    public StatusItem ProcessingItem { get; set; }
     public StatusBar VariableStatusBar { get; set; }
 
     public MainWindow()
@@ -42,7 +47,7 @@ internal class MainWindow : Toplevel
             CanFocus = true,
         };
 
-        RequestListView = new ListView(new string[0])
+        RequestListView = new ListView
         {
             X = 0,
             Y = 0,
@@ -55,7 +60,21 @@ internal class MainWindow : Toplevel
         RequestListView.KeyPress += RequestListKeyPressed;
 
         LeftPane.Add(RequestListView);
+        
+        ResultsView = new TextView
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+            CanFocus = true,
+            ColorScheme = new ColorScheme(),
+            ReadOnly = true,
+        };
+        
+        RightPane.Add(ResultsView);
 
+        ProcessingItem = new StatusItem(Key.Null, "", () => { });
         MainStatusBar = new StatusBar
         {
             Visible = true,
@@ -64,6 +83,7 @@ internal class MainWindow : Toplevel
             {
                 new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Quit", RequestStop),
                 new StatusItem(Key.V | Key.AltMask, "~Alt-V~ Variables", SwitchToVariableView),
+                ProcessingItem,
             },
         };
 
@@ -146,17 +166,35 @@ internal class MainWindow : Toplevel
     {
         if (_selectedConfig == null || _selectedRequest == null) { return; }
 
+        ProcessingItem.Title = ResultsView.Text = "Sending bloop";
+
+        var stopwatch = new Stopwatch();
+        stopwatch.Start();
         Directory.SetCurrentDirectory(_selectedConfig.Directory);
         var result = await _blooper.SendRequest(_selectedConfig, _selectedRequest);
-        _ = result.MatchAsync(async response =>
+        await result.MatchAsync(async response =>
         {
-            RightPane.Text = await response.Content.ReadAsStringAsync();
+            if (response.Content.Headers.ContentType?.MediaType == "application/json")
+            {
+                var parsedJson = JsonNode.Parse(await response.Content!.ReadAsStreamAsync());
+                var json = parsedJson!.ToJsonString(options: new JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                });
+                ResultsView.Text = json;
+            }
+            else
+            {
+                ResultsView.Text = await response.Content.ReadAsStringAsync();
+            }
         },
         error =>
         {
-            RightPane.Text = error.Message;
+            ResultsView.Text = error.Message;
             return Task.CompletedTask;
         });
+        stopwatch.Stop();
+        ProcessingItem.Title = $"Response Time: {stopwatch.Elapsed}";
     }
 
     private void RequestSelectionChanged(ListViewItemEventArgs args)
