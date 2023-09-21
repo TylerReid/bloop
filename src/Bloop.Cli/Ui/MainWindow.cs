@@ -1,9 +1,11 @@
 ﻿using Bloop.Core;
 using System.Data;
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Terminal.Gui;
+using Terminal.Gui.Graphs;
 
 namespace Bloop.Cli.Ui;
 
@@ -15,13 +17,15 @@ internal class MainWindow : Toplevel
     private readonly Blooper _blooper = new();
     private readonly DataTable _scratchVariables = new();
 
-    public FrameView LeftPane { get; set; }
-    public ListView RequestListView { get; set; }
-    public FrameView RightPane { get; set; }
-    public TextView ResultsView { get; set; }
-    public StatusBar MainStatusBar { get; set; }
-    public StatusItem ProcessingItem { get; set; }
-    public StatusBar VariableStatusBar { get; set; }
+    private FrameView LeftPane { get; set; }
+    private ListView RequestListView { get; set; }
+    private FrameView RightPane { get; set; }
+    private TextView ResultDetails { get; set; }
+    private TextView ResultsView { get; set; }
+    private StatusBar MainStatusBar { get; set; }
+    private StatusItem ProcessingItem { get; set; }
+    private StatusBar VariableStatusBar { get; set; }
+    private TableView VariableTableView { get; set; }
 
     public MainWindow()
     {
@@ -58,20 +62,41 @@ internal class MainWindow : Toplevel
 
         RequestListView.SelectedItemChanged += RequestSelectionChanged;
         RequestListView.KeyPress += RequestListKeyPressed;
+        RequestListView.MouseClick += RequestListClick;
 
         LeftPane.Add(RequestListView);
+
+        ResultDetails = new TextView
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Percent(10),
+            CanFocus = true,
+            ColorScheme = new ColorScheme(),
+            ReadOnly = true,
+        };
+
+        var line = new LineView
+        {
+            X = 0,
+            Y = Pos.Bottom(ResultDetails),
+            Orientation = Orientation.Horizontal,
+        };
         
         ResultsView = new TextView
         {
             X = 0,
-            Y = 0,
+            Y = Pos.Bottom(line),
             Width = Dim.Fill(),
             Height = Dim.Fill(),
             CanFocus = true,
             ColorScheme = new ColorScheme(),
             ReadOnly = true,
         };
-        
+
+        RightPane.Add(ResultDetails);
+        RightPane.Add(line);
         RightPane.Add(ResultsView);
 
         ProcessingItem = new StatusItem(Key.Null, "", () => { });
@@ -83,6 +108,7 @@ internal class MainWindow : Toplevel
             {
                 new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Quit", RequestStop),
                 new StatusItem(Key.V | Key.AltMask, "~Alt-V~ Variables", SwitchToVariableView),
+                new StatusItem(Key.C | Key.CtrlMask, "~Ctrl-C~ Copy Result", CopyResultToClipboard),
                 ProcessingItem,
             },
         };
@@ -105,12 +131,20 @@ internal class MainWindow : Toplevel
         _ = LoadAsync();
     }
 
+    private void CopyResultToClipboard()
+    {
+        if (ResultsView.Text.ToString() != null)
+        {
+            Clipboard.TrySetClipboardData(ResultsView.Text.ToString());
+        }
+    }
+
     private void SwitchToMainView()
     {
         foreach (DataRow row in _scratchVariables.Rows)
         {
             _selectedConfig!.Variables
-                .First(x => x.Name == (string)row["Name"]).Value = (string?)row["Value"];
+                .First(x => x.Name == (string)row["Name"]).Value = row["Value"] as string;
         }
         _scratchVariables.Clear();
         RemoveAll();
@@ -138,7 +172,7 @@ internal class MainWindow : Toplevel
             _scratchVariables.Rows.Add(variable.Name, variable.Value);
         }
 
-        var table = new TableView
+        VariableTableView = new TableView
         {
             X = 0,
             Y = 0,
@@ -147,16 +181,61 @@ internal class MainWindow : Toplevel
             Table = _scratchVariables,
         };
 
-        frame.Add(table);
-        // todo add edit dialog for table
+        VariableTableView.CellActivated += EditCurrentCell;
 
+        frame.Add(VariableTableView);
         Add(frame);
         Add(VariableStatusBar);
+    }
+
+    private void EditCurrentCell(TableView.CellActivatedEventArgs e)
+    {
+        if (e.Table == null || e.Col != 1) { return; }
+        var oldValue = e.Table.Rows[e.Row][e.Col] as string;
+        var okPressed = false;
+
+        var ok = new Button("Ok", is_default: true);
+        ok.Clicked += () => { okPressed = true; Application.RequestStop(); };
+        var cancel = new Button("Cancel");
+        cancel.Clicked += () => { Application.RequestStop(); };
+        var dialog = new Dialog("Enter a value", ok, cancel);
+        var label = new Label
+        {
+            X = 0,
+            Y = 1,
+            Text = e.Table.Rows[e.Row][0].ToString(),
+        };
+        var textField = new TextField
+        {
+            Text = oldValue ?? "",
+            X = 0,
+            Y = 2,
+            Width = Dim.Fill(),
+        };
+
+        dialog.Add(label, textField);
+        textField.SetFocus();
+        Application.Run(dialog);
+
+        if (okPressed)
+        {
+            var newValue = textField.Text.ToString();
+            e.Table.Rows[e.Row][e.Col] = newValue as object ?? DBNull.Value;
+            VariableTableView.Update();
+        }
     }
 
     private void RequestListKeyPressed(KeyEventEventArgs args)
     {
         if (args.KeyEvent.Key == Key.Enter)
+        {
+            _ = SendSelectedRequest();
+        }
+    }
+
+    private void RequestListClick(MouseEventArgs args)
+    {
+        if (args.MouseEvent.Flags.HasFlag(MouseFlags.Button1DoubleClicked))
         {
             _ = SendSelectedRequest();
         }
@@ -174,6 +253,16 @@ internal class MainWindow : Toplevel
         var result = await _blooper.SendRequest(_selectedConfig, _selectedRequest);
         await result.MatchAsync(async response =>
         {
+            var sb = new StringBuilder();
+            sb.AppendLine(_selectedRequest.Uri); // todo probably should get the actual rendered request url
+            sb.AppendLine("Headers");
+            foreach (var (k, v) in response.Headers)
+            {
+                sb.AppendLine($"{k}: {v.Aggregate((a, b) => $"{a},{b}")}");
+            }
+
+            ResultDetails.Text = sb.ToString();
+
             if (response.Content.Headers.ContentType?.MediaType == "application/json")
             {
                 var parsedJson = JsonNode.Parse(await response.Content!.ReadAsStreamAsync());
@@ -190,6 +279,7 @@ internal class MainWindow : Toplevel
         },
         error =>
         {
+            ResultDetails.Text = "Something bad happened!";
             ResultsView.Text = error.Message;
             return Task.CompletedTask;
         });
