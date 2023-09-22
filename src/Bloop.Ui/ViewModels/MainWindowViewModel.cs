@@ -29,9 +29,6 @@ public class MainWindowViewModel : ViewModelBase
 
     public async Task SendRequestAsync(Request request)
     {
-        // this is kind of dumb to set here, but we need to do this to make relative paths from variables work
-        // this could be set when we get a new selected config but that would make the auto property go away
-        Directory.SetCurrentDirectory(BloopConfig!.Directory);
         var result = await _blooper.SendRequest(BloopConfig!, request);
         RequestResultDocument = await result.MatchAsync(async response => 
         {

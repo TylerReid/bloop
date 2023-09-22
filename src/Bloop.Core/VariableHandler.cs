@@ -91,7 +91,7 @@ public partial class VariableHandler
 
         if (variable.Command != null)
         {
-            var commandResult = await RunCommand(variable);
+            var commandResult = await RunCommand(variable, config);
             if (commandResult.Unwrap() is Error e)
             {
                 return e;
@@ -112,7 +112,8 @@ public partial class VariableHandler
         {
             try
             {
-                variable.Value = await File.ReadAllTextAsync(variable.File);
+                var path = Path.GetFullPath(variable.File, config.Directory);
+                variable.Value = await File.ReadAllTextAsync(path);
                 return null;
             }
             catch (Exception e) when (variable.Default == null)
@@ -145,13 +146,14 @@ public partial class VariableHandler
         return new Error($"variable {variable.Name} does not have a value, file, jpath, or command defined");
     }
 
-    private static async Task<Either<Unit, Error>> RunCommand(Variable variable)
+    private static async Task<Either<Unit, Error>> RunCommand(Variable variable, Config config)
     {
         if (variable.Command == null)
         {
             return new Error("variable command was unexpectedly null");
         }
 
+        var commandPath = Path.GetFullPath(variable.Command, config.Directory);
         var process = new Process
         {
             StartInfo = new ProcessStartInfo
@@ -162,6 +164,7 @@ public partial class VariableHandler
                 RedirectStandardError = true,
                 CreateNoWindow = true,
                 UseShellExecute = false,
+                WorkingDirectory = config.Directory,
             },
         };
 

@@ -249,12 +249,11 @@ internal class MainWindow : Toplevel
 
         var stopwatch = new Stopwatch();
         stopwatch.Start();
-        Directory.SetCurrentDirectory(_selectedConfig.Directory);
         var result = await _blooper.SendRequest(_selectedConfig, _selectedRequest);
         await result.MatchAsync(async response =>
         {
             var sb = new StringBuilder();
-            sb.AppendLine(_selectedRequest.Uri); // todo probably should get the actual rendered request url
+            sb.AppendLine(response.RequestMessage?.RequestUri?.ToString());
             sb.AppendLine("Headers");
             foreach (var (k, v) in response.Headers)
             {
