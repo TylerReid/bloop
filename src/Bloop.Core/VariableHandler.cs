@@ -21,14 +21,15 @@ public partial class VariableHandler
         .Distinct()
         .ToList();
 
-    public static string? ExpandVariables(string? original, Config config) =>
-        ExpandVariables(original, config.Variables.ToDictionary(x => x.Name, x => x.Value!));
+    public static string? ExpandVariables(string? original, Config config, Func<string, string>? transformer = null) =>
+        ExpandVariables(original, config.Variables.ToDictionary(x => x.Name, x => x.Value!), transformer);
 
-    public static string? ExpandVariables(string? original, Dictionary<string, string> mappings)
+    public static string? ExpandVariables(string? original, Dictionary<string, string> mappings, Func<string, string>? transformer = null)
     {
+        if (transformer == null) { transformer = s => s; }
         foreach (var (name, value) in mappings)
         {
-            original = original?.Replace($"${{{name}}}", value);
+            original = original?.Replace($"${{{name}}}", transformer(value));
         }
         return original;
     }

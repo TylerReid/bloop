@@ -1,4 +1,5 @@
 using Newtonsoft.Json.Linq;
+using System.Web;
 
 namespace Bloop.Core;
 
@@ -19,8 +20,11 @@ public class Blooper
         {
             return e;
         }
-
-        var httpRequest = new HttpRequestMessage(request.Method, VariableHandler.ExpandVariables(request.Uri, config));
+        // doing a url encode is not guaranteed to be correct because you could build any part of the url
+        // so ${baseUrl} might legitimately be user:pw@example.org so encoding that breaks things
+        // but this seems less likely that query params so break for now. Try and find a better solution later
+        var httpRequest = new HttpRequestMessage(request.Method, 
+            VariableHandler.ExpandVariables(request.Uri, config, HttpUtility.UrlEncode));
 
         foreach (var (name, value) in request.Headers)
         {

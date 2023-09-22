@@ -139,6 +139,12 @@ Write-Host $echo
 
 Assert "blorp" $echo
 
+$echo = ./bloop 'needsEncode'
+Write-Host "`nbloop needsEncode output:"
+Write-Host $echo
+
+Assert "this@wow&broke?" $echo
+
 $testJob | Stop-Job
 Remove-Item ./bloop.exe -ErrorAction SilentlyContinue
 Remove-Item ./bloop -ErrorAction SilentlyContinue
