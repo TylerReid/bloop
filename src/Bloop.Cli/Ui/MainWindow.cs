@@ -253,8 +253,8 @@ internal class MainWindow : Toplevel
         await result.MatchAsync(async response =>
         {
             var sb = new StringBuilder();
-            sb.AppendLine(response.RequestMessage?.RequestUri?.ToString());
-            sb.AppendLine("Headers");
+            sb.AppendLine($"{response.RequestMessage?.Method.ToString().ToUpper()} {response.RequestMessage?.RequestUri?.ToString()}");
+            sb.AppendLine($"HTTP/{response.RequestMessage?.Version} {(int)response.StatusCode} {response.ReasonPhrase}");
             foreach (var (k, v) in response.Headers)
             {
                 sb.AppendLine($"{k}: {v.Aggregate((a, b) => $"{a},{b}")}");
