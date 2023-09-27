@@ -20,11 +20,15 @@ public class Blooper
         {
             return e;
         }
-        // doing a url encode is not guaranteed to be correct because you could build any part of the url
-        // so ${baseUrl} might legitimately be user:pw@example.org so encoding that breaks things
-        // but this seems less likely that query params so break for now. Try and find a better solution later
-        var httpRequest = new HttpRequestMessage(request.Method, 
-            VariableHandler.ExpandVariables(request.Uri, config, HttpUtility.UrlEncode));
+
+        var urlParts = request.Uri.Split('?', 2);
+        var uri = new UriBuilder(VariableHandler.ExpandVariables(urlParts[0], config)!);
+        if (urlParts.Length == 2)
+        {
+            uri.Query = VariableHandler.ExpandVariables(urlParts[1], config, HttpUtility.UrlEncode);
+        }
+        
+        var httpRequest = new HttpRequestMessage(request.Method, uri.Uri);
 
         foreach (var (name, value) in request.Headers)
         {
@@ -33,7 +37,7 @@ public class Blooper
 
         foreach (var (name, value) in config.Defaults.Headers)
         {
-            if (!httpRequest.Headers.Any(x => x.Key == name))
+            if (httpRequest.Headers.All(x => x.Key != name))
             {
                 httpRequest.Headers.TryAddWithoutValidation(name, VariableHandler.ExpandVariables(value, config));
             }
