@@ -53,11 +53,11 @@ public class Program
         return 1;
     }
 
-    private static async Task<int> RunUi(RequestOptions request)
+    private static Task<int> RunUi(RequestOptions request)
     {
         Application.Run<MainWindow>();
         Application.Shutdown();
-        return 0;
+        return Task.FromResult(0);
     }
 
     private static async Task<int> Validate(ValidateOptions options)
