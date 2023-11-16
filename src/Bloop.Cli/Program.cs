@@ -86,10 +86,13 @@ public class Program
             config => {
                 if ("all".StartsWith(options.Type) || "requests".StartsWith(options.Type))
                 {
-                    Output.WriteLine("requests:", ConsoleColor.Green);
                     foreach (var request in config.Requests)
                     {
-                        Output.Write($"{request.Name}:\t", ConsoleColor.White);
+                        Output.Write("[");
+                        Output.Write("request", ConsoleColor.Green);
+                        Output.Write(".");
+                        Output.Write($"{request.Name}", ConsoleColor.White);
+                        Output.WriteLine("]");
                         Output.WriteLine($"{request}");
                     }
                     Output.WriteLine();
@@ -98,10 +101,13 @@ public class Program
 
                 if ("all".StartsWith(options.Type) || "variables".StartsWith(options.Type))
                 {
-                    Output.WriteLine("variables:", ConsoleColor.Green);
                     foreach (var variable in config.Variables)
                     {
-                        Output.Write($"{variable.Name}:\t", ConsoleColor.White);
+                        Output.Write("[");
+                        Output.Write("variable", ConsoleColor.Green);
+                        Output.Write(".");
+                        Output.Write($"{variable.Name}", ConsoleColor.White);
+                        Output.WriteLine("]");
                         Output.WriteLine($"{variable}");
                     }
                     Output.WriteLine();
@@ -111,7 +117,7 @@ public class Program
                 {
                     if (config.Defaults.Headers.Any())
                     {
-                        Output.WriteLine("default headers:", ConsoleColor.Green);
+                        Output.WriteLine("default headers", ConsoleColor.Green);
                         foreach (var (name, value) in config.Defaults.Headers)
                         {
                             Output.Write($"{name}: ", ConsoleColor.White);

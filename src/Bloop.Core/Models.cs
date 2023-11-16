@@ -14,6 +14,8 @@ public record Config : BaseModel
     public List<Request> Requests { get; set; } = new();
     public List<Variable> Variables { get; set; } = new();
     public Defaults Defaults { get; set; } = new();
+
+    public override string ToString() => base.ToString();
 }
 
 public record Request : BaseModel
@@ -26,6 +28,8 @@ public record Request : BaseModel
     public string? ContentType { get; set; }
     public Dictionary<string, string>? Form { get; set; }
     public Dictionary<string, string> Headers { get; set;} = new();
+    
+    public override string ToString() => base.ToString();
 }
 
 public record Variable : BaseModel
@@ -59,16 +63,22 @@ public record Variable : BaseModel
             && ValueDateTime.Value.Add(ValueLifetime.Value) < DateTime.UtcNow;
 
     public void ClearIfExpired() => Value = IsExpired() ? null : Value;
+    
+    public override string ToString() => base.ToString();
 }
 
 public record Defaults : BaseModel
 {
     public Dictionary<string, string> Headers { get; set; } = new();
+    
+    public override string ToString() => base.ToString();
 }
 
 public record MetaConfig : BaseModel
 {
     public List<string> BloopDirectories { get; set; } = new();
+    
+    public override string ToString() => base.ToString();
 }
 
 public class Error
@@ -101,10 +111,8 @@ public record BaseModel : INotifyPropertyChanged
     public override string ToString()
     {
         var sb = new StringBuilder();
-        sb.Append("{ ");
-
-        var comma = "";
-        foreach (var property in GetType().GetProperties())
+        foreach (var property in GetType().GetProperties()
+                     .Where(p => p.CustomAttributes.All(a => a.AttributeType != typeof(IgnoreDataMemberAttribute))))
         {
             var value = property.GetValue(this);
             if (value == null)
@@ -126,12 +134,9 @@ public record BaseModel : INotifyPropertyChanged
                         .Replace("\r", "");
                     valueString = $"{denewlined.Substring(0, 15)}...";
                 }
-                sb.Append($"{comma} {property.Name}: {valueString}");
+                sb.Append($"{property.Name} = {valueString}\n");
             }
-            comma = ",";
         }
-
-        sb.Append(" }");
         return sb.ToString();
     }
 }
