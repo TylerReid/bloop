@@ -31,7 +31,7 @@ public class Program
         {
             if (string.IsNullOrEmpty(request.RequestName))
             {
-                return await RunUi(request);
+                return RunUi(request);
             }
             return await Run(request);
         }
@@ -53,7 +53,7 @@ public class Program
         return 1;
     }
 
-    private static async Task<int> RunUi(RequestOptions request)
+    private static int RunUi(RequestOptions request)
     {
         Application.Run<MainWindow>();
         Application.Shutdown();

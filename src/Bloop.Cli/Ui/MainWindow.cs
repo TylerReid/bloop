@@ -25,7 +25,7 @@ internal class MainWindow : Toplevel
     private StatusBar MainStatusBar { get; set; }
     private StatusItem ProcessingItem { get; set; }
     private StatusBar VariableStatusBar { get; set; }
-    private TableView VariableTableView { get; set; }
+    private TableView? VariableTableView { get; set; }
 
     public MainWindow()
     {
@@ -221,7 +221,7 @@ internal class MainWindow : Toplevel
         {
             var newValue = textField.Text.ToString();
             e.Table.Rows[e.Row][e.Col] = newValue as object ?? DBNull.Value;
-            VariableTableView.Update();
+            VariableTableView?.Update();
         }
     }
 

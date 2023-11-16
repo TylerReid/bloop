@@ -16,18 +16,20 @@ function Build($includeRuntime, $path) {
     }
 }
 
-Build '--no-self-contained' 'smol'
-
 if ($buildSelfContained -or $buildRelease) {
-    Build '--self-contained' 'big'
+    $size = 'big'
+    Build '--self-contained' $size
+} else {
+    $size = 'smol'
+    Build '--no-self-contained' $size
 }
 
 if (!$skipResultCopy) {
     if ($IsLinux) {
-        . "$PSScriptRoot/copyCli.sh" 'smol/linux-x64'
+        . "$PSScriptRoot/copyCli.sh" "$size/linux-x64"
     }
     if ($IsMacOs) {
-        . "$PSScriptRoot/copyCli.sh" 'smol/osx-x64'
+        . "$PSScriptRoot/copyCli.sh" "$size/osx-x64"
     }
 }
 
