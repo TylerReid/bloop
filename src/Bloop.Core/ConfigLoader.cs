@@ -103,12 +103,12 @@ public class ConfigLoader
                 Defaults = Defaults,
                 Directory = path,
             };
-            foreach (var (key, value) in Request)
+            foreach (var (key, value) in Request.OrderBy(x => x.Key))
             {
                 value.Name = key;
                 config.Requests.Add(value);
             }
-            foreach (var (key, value) in Variable)
+            foreach (var (key, value) in Variable.OrderBy(x => x.Key))
             {
                 value.Name = key;
                 config.Variables.Add(value);
