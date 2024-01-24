@@ -7,7 +7,7 @@ public partial class VariableHandler
 {
     private static readonly Regex VarRegex = VariableRegex();
 
-    public static List<string> GetVariables(string s) => VarRegex.Matches(s)
+    public static List<string> GetVariables(string? s) => VarRegex.Matches(s ?? "")
         .Select(x => x.Groups["var"])
         .Select(x => x.Value)
         .Distinct()
@@ -26,7 +26,7 @@ public partial class VariableHandler
 
     public static string? ExpandVariables(string? original, Dictionary<string, string> mappings, Func<string, string>? transformer = null)
     {
-        if (transformer == null) { transformer = s => s; }
+        transformer ??= s => s;
         foreach (var (name, value) in mappings)
         {
             original = original?.Replace($"${{{name}}}", transformer(value));
@@ -72,6 +72,18 @@ public partial class VariableHandler
         if (variable.Value != null)
         {
             return null;
+        }
+
+        // first figure out if we are in a yo dawg I heard you like variables situation
+        var variableVariables = GetVariables(variable.Default)
+            .Concat(GetVariables(variable.CommandArgs));
+        foreach (var variableVariable in UnsatisfiedVariables(config).Where(x => variableVariables.Contains(x.Name)))
+        {
+            var result = await SatisfyVariable(blooper, config, variable.Name, variableVariable);
+            if (result != null)
+            {
+                return result;
+            }
         }
 
         if (variable.Jpath != null && variable.Source != null)
@@ -129,18 +141,7 @@ public partial class VariableHandler
 
         if (variable.Default != null)
         {
-            var variableVariables = GetVariables(variable.Default);
-            foreach (var variableVariable in UnsatisfiedVariables(config).Where(x => variableVariables.Contains(x.Name)))
-            {
-                var result = await SatisfyVariable(blooper, config, variable.Name, variableVariable);
-                if (result != null)
-                {
-                    return result;
-                }
-            }
-
             variable.Value = ExpandVariables(variable.Default, config);
-            
             return null;
         }
 
@@ -153,14 +154,13 @@ public partial class VariableHandler
         {
             return new Error("variable command was unexpectedly null");
         }
-
-        var commandPath = Path.GetFullPath(variable.Command, config.Directory);
+        
         var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
                 FileName = variable.Command,
-                Arguments = variable.CommandArgs,
+                Arguments = ExpandVariables(variable.CommandArgs, config),
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
                 CreateNoWindow = true,

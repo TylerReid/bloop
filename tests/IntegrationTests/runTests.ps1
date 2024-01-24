@@ -145,6 +145,12 @@ Write-Host $echo
 
 Assert "this@wow&broke?" $echo
 
+$echo = ./bloop argsWithVar
+Write-Host "`nbloop argsWithVar output:"
+Write-Host $echo
+
+Assert "blorp " $echo
+
 $testJob | Stop-Job
 Remove-Item ./bloop.exe -ErrorAction SilentlyContinue
 Remove-Item ./bloop -ErrorAction SilentlyContinue

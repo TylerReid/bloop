@@ -109,6 +109,7 @@ internal class MainWindow : Toplevel
                 new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Quit", RequestStop),
                 new StatusItem(Key.V | Key.AltMask, "~Alt-V~ Variables", SwitchToVariableView),
                 new StatusItem(Key.C | Key.CtrlMask, "~Ctrl-C~ Copy Result", CopyResultToClipboard),
+                new StatusItem(Key.Tab | Key.CtrlMask, "~Alt-Tab~ Switch Bloops", CycleConfigs),
                 ProcessingItem,
             },
         };
@@ -302,5 +303,17 @@ internal class MainWindow : Toplevel
         _selectedConfig = config;
         if (config == null) { return; }
         RequestListView.SetSource(config.Requests.Select(x => x.Name).ToList());
+    }
+    
+    private void CycleConfigs()
+    {
+        if (_selectedConfig == null)
+        {
+            SelectConfig(_configs.FirstOrDefault());
+            return;
+        }
+        var index = _configs.IndexOf(_selectedConfig) + 1;
+        var newConfig = _configs[index >= _configs.Count ? 0 : index];
+        SelectConfig(newConfig);
     }
 }
