@@ -65,7 +65,7 @@ public partial class VariableHandler
         return Unit.Instance;
     }
 
-    private static async Task<Error?> SatisfyVariable(Blooper blooper, Config config, string sourceName, Variable variable)
+    public static async Task<Error?> SatisfyVariable(Blooper blooper, Config config, string sourceName, Variable variable)
     {
         variable.ClearIfExpired();
 
@@ -86,7 +86,7 @@ public partial class VariableHandler
             }
         }
 
-        if (variable.Jpath != null && variable.Source != null)
+        if (variable is { Jpath: not null, Source: not null })
         {
             // if the source is this request, don't bloop because that will cause infinite loop
             // one legitimate way to end up in this scenario is with default headers
@@ -95,21 +95,20 @@ public partial class VariableHandler
                 return null;
             }
             var response = await blooper.SendRequest(config, variable.Source);
-            if (response.Unwrap() is Error e)
-            {
-                return e;
-            }
-            return null;
+            return response.Match<Error?>(_ => null, error => error);
         }
 
         if (variable.Command != null)
         {
             var commandResult = await RunCommand(variable, config);
-            if (commandResult.Unwrap() is Error e)
-            {
-                return e;
-            }
-            return null;
+            return commandResult.Match<Error?>(
+                s =>
+                {
+                    variable.Value = s;
+                    return null;
+                },
+                error => error
+            );
         }
 
         if (variable.Env != null)
@@ -148,7 +147,7 @@ public partial class VariableHandler
         return new Error($"variable {variable.Name} does not have a value, file, jpath, or command defined");
     }
 
-    private static async Task<Either<Unit, Error>> RunCommand(Variable variable, Config config)
+    private static async Task<Either<string, Error>> RunCommand(Variable variable, Config config)
     {
         if (variable.Command == null)
         {
@@ -178,9 +177,7 @@ public partial class VariableHandler
                 return new Error($"variable command exited with code {process.ExitCode} and output:\n{await process.StandardError.ReadToEndAsync()}");
             }
 
-            variable.Value = await process.StandardOutput.ReadToEndAsync();
-
-            return Unit.Instance;
+            return await process.StandardOutput.ReadToEndAsync();
         }
         catch (Exception e)
         {

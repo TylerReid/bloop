@@ -12,7 +12,7 @@ public class Program
 {
     public static async Task<int> Main(string[] args)
     {
-        var parseObject = Parser.Default.ParseArguments<RequestOptions, ListOptions, ValidateOptions>(args);
+        var parseObject = Parser.Default.ParseArguments<RequestOptions, ListOptions, ValidateOptions, VariableOptions>(args);
         var parsedArgs = parseObject as Parsed<object>;
         if (parsedArgs == null)
         {
@@ -44,6 +44,11 @@ public class Program
         if (parsedArgs.Value is ValidateOptions validate)
         {
             return await Validate(validate);
+        }
+
+        if (parsedArgs.Value is VariableOptions variable)
+        {
+            return await Variable(variable);
         }
 
         Output.WriteError("something bad happened, and we got these parsed types for cli options:");
@@ -163,12 +168,7 @@ public class Program
             }
         }
 
-        var insecureHandler = new HttpClientHandler();
-        insecureHandler.ServerCertificateCustomValidationCallback = (a, b, c, d) => true;
-        var client = options.Insecure
-            ? new HttpClient(insecureHandler)
-            : new HttpClient();
-        var blooper = new Blooper(client);
+        var blooper = CreateBlooper(options);
 
         var response = await blooper.SendRequest(config, options.RequestName);
 
@@ -182,6 +182,50 @@ public class Program
                 return Task.FromResult(1);
             }
         );
+    }
+
+    private static async Task<int> Variable(VariableOptions options)
+    {
+        var configLoad = await ConfigLoader.LoadConfigAsync(options.ConfigPath ?? Environment.CurrentDirectory);
+
+        if (configLoad.Unwrap() is Error error)
+        {
+            Output.WriteError(error.Message);
+            return 1;
+        }
+
+        var config = configLoad.UnwrapSuccess();
+        var blooper = CreateBlooper(options);
+
+        var variable = config.Variables.FirstOrDefault(x => x.Name == options.VariableName);
+        if (variable is null)
+        {
+            Output.WriteError($"No variable named {options.VariableName} found");
+            return 1;
+        }
+        
+        var result = await VariableHandler.SatisfyVariable(blooper, config, "cli", variable);
+
+        if (result is not null)
+        {
+            Output.WriteError(result.Message);
+            return 1;
+        }
+        
+        Output.WriteLine(variable.Value!);
+        
+        return 0;
+    }
+
+    private static Blooper CreateBlooper(BaseOptions options)
+    {
+        var insecureHandler = new HttpClientHandler();
+        insecureHandler.ServerCertificateCustomValidationCallback = (a, b, c, d) => true;
+        var client = options.Insecure
+            ? new HttpClient(insecureHandler)
+            : new HttpClient();
+        var blooper = new Blooper(client);
+        return blooper;
     }
 
     static async Task PrintResponse(HttpResponseMessage response, RequestOptions options)

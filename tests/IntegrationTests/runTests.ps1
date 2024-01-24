@@ -151,6 +151,18 @@ Write-Host $echo
 
 Assert "blorp " $echo
 
+$echo = ./bloop variable file
+Write-Host "`nbloop variable file output:"
+Write-Host $echo
+
+Assert "blorp" $echo
+
+$echo = ./bloop variable otherrequest
+Write-Host "`nbloop variable file output:"
+Write-Host $echo
+
+Assert "localhost:5284" $echo
+
 $testJob | Stop-Job
 Remove-Item ./bloop.exe -ErrorAction SilentlyContinue
 Remove-Item ./bloop -ErrorAction SilentlyContinue

@@ -11,7 +11,7 @@ namespace Bloop.Cli.Ui;
 
 internal class MainWindow : Toplevel
 {
-    private List<Config> _configs = new List<Config>();
+    private List<Config> _configs = new();
     private Config? _selectedConfig;
     private Request? _selectedRequest;
     private readonly Blooper _blooper = new();
@@ -104,24 +104,24 @@ internal class MainWindow : Toplevel
         {
             Visible = true,
             CanFocus = false,
-            Items = new[]
-            {
+            Items =
+            [
                 new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Quit", RequestStop),
                 new StatusItem(Key.V | Key.AltMask, "~Alt-V~ Variables", SwitchToVariableView),
                 new StatusItem(Key.C | Key.CtrlMask, "~Ctrl-C~ Copy Result", CopyResultToClipboard),
                 new StatusItem(Key.Tab | Key.CtrlMask, "~Alt-Tab~ Switch Bloops", CycleConfigs),
-                ProcessingItem,
-            },
+                ProcessingItem
+            ],
         };
 
         VariableStatusBar = new StatusBar
         {
             Visible = true,
             CanFocus = false,
-            Items = new[]
-            {
-                new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Back", SwitchToMainView),
-            },
+            Items =
+            [
+                new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Back", SwitchToMainView)
+            ],
         };
 
         _scratchVariables.Columns.Add("Name", typeof(string));
