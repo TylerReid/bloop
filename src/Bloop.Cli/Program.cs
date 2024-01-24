@@ -196,7 +196,7 @@ public class Program
 
         var config = configLoad.UnwrapSuccess();
         var blooper = CreateBlooper(options);
-
+        
         var variable = config.Variables.FirstOrDefault(x => x.Name == options.VariableName);
         if (variable is null)
         {

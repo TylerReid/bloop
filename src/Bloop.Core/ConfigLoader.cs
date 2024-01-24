@@ -101,7 +101,7 @@ public class ConfigLoader
             var config = new Config
             {
                 Defaults = Defaults,
-                Directory = path,
+                Directory = Path.GetFullPath(path),
             };
             foreach (var (key, value) in Request.OrderBy(x => x.Key))
             {

@@ -154,11 +154,17 @@ public partial class VariableHandler
             return new Error("variable command was unexpectedly null");
         }
         
+        var commandPath = Path.GetFullPath(variable.Command, config.Directory);
+        if (!File.Exists(commandPath))
+        {
+            commandPath = variable.Command;
+        }
+        
         var process = new Process
         {
             StartInfo = new ProcessStartInfo
             {
-                FileName = variable.Command,
+                FileName = commandPath,
                 Arguments = ExpandVariables(variable.CommandArgs, config),
                 RedirectStandardOutput = true,
                 RedirectStandardError = true,
