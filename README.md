@@ -56,6 +56,9 @@ uri = "https://stackoverflow.com/api/recent-chat"
 #### headers
   * values can contain variables
   * optional key value pairs to be sent as headers
+#### query
+  * values can contain variables
+  * optional key value pairs to be added to the uri as query parameters
 
 ## Variables
 Variables can be used in request header values, bodies, and the uri by using `${someVariableName}` inside of the definition. Values come from various sources defined in the properties or passed to the cli with `--var someKey=value,otherKey=derp`
