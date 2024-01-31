@@ -27,7 +27,8 @@ public record Request : BaseModel
     public string? Body { get; set; }
     public string? ContentType { get; set; }
     public Dictionary<string, string>? Form { get; set; }
-    public Dictionary<string, string> Headers { get; set;} = new();
+    public Dictionary<string, string> Headers { get; set; } = new();
+    public Dictionary<string, string> Query { get; set; } = new();
     
     public override string ToString() => base.ToString();
 }

@@ -18,6 +18,7 @@ public partial class VariableHandler
         .Concat(GetVariables(request.Body ?? ""))
         .Concat(GetVariables(request.Uri))
         .Concat(request.Form?.Values.SelectMany(GetVariables) ?? Enumerable.Empty<string>())
+        .Concat(request.Query.Values.SelectMany(GetVariables))
         .Distinct()
         .ToList();
 

@@ -163,6 +163,12 @@ Write-Host $echo
 
 Assert "localhost:5284" $echo
 
+$echo = ./bloop withQueryDict
+Write-Host "`nbloop withQueryDict output:"
+Write-Host $echo
+
+Assert "blooooooopblorp" $echo
+
 $testJob | Stop-Job
 Remove-Item ./bloop.exe -ErrorAction SilentlyContinue
 Remove-Item ./bloop -ErrorAction SilentlyContinue

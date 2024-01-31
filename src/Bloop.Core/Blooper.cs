@@ -23,10 +23,21 @@ public class Blooper
 
         var urlParts = request.Uri.Split('?', 2);
         var uri = new UriBuilder(VariableHandler.ExpandVariables(urlParts[0], config)!);
+        // first expand variables that were included in the request uri
         if (urlParts.Length == 2)
         {
             uri.Query = VariableHandler.ExpandVariables(urlParts[1], config, HttpUtility.UrlEncode);
         }
+        // now expand variables that are included in the request query property
+        var query = HttpUtility.ParseQueryString(uri.Query);
+        foreach (var (k, v) in request.Query)
+        {
+            var encodedKey = VariableHandler.ExpandVariables(k, config);
+            var encodedValue = VariableHandler.ExpandVariables(v, config);
+            query.Add(encodedKey, encodedValue);
+        }
+
+        uri.Query = query.ToString();
         
         var httpRequest = new HttpRequestMessage(request.Method, uri.Uri);
 
@@ -92,7 +103,7 @@ public class Blooper
                         continue;
                     }
 
-                    var jsonValue = json.SelectToken(variable.Jpath!);
+                    var jsonValue = json.SelectToken(variable.Jpath);
                     if (jsonValue == null)
                     {
                         continue;

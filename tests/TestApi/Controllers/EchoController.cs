@@ -27,9 +27,9 @@ public class EchoController : ControllerBase
 
     [HttpGet]
     [Route("query")]
-    public IActionResult Echo([FromQuery]string something)
+    public IActionResult Echo([FromQuery]string something, [FromQuery]string? somethingElse)
     {
-        return Ok(something);
+        return Ok(something + somethingElse);
     }
 
     [HttpPost]
