@@ -27,7 +27,12 @@ public class ConfigLoader
                 content = await File.ReadAllTextAsync(path);
             }
             
-            return Toml.ToModel<SerializationConfig>(content, options: Options()).ToConfig(path);
+            var config = Toml.ToModel<SerializationConfig>(content, options: Options()).ToConfig(path);
+            if (config.Requests.Count == 0 && config.Variables.Count == 0)
+            {
+                return new Error($"No requests or variables found in {path}");
+            }
+            return config;
         }
         catch (FileNotFoundException e)
         {
@@ -56,18 +61,27 @@ public class ConfigLoader
     {
         var configs = new List<Config>();
         var envPaths = Environment.GetEnvironmentVariable("BLOOP_CONFIG_DIRS");
-        foreach (var path in envPaths?.Split(PathListSeparator).ToList() ?? await LoadPathsFromProfileAsync())
+        foreach (var path in envPaths?.Split(PathListSeparator).ToList() ?? await GetDefaultPathsAsync())
         {
-            // todo handle errors
-            configs.Add((await LoadConfigAsync(path)).UnwrapSuccess());
+            if ((await LoadConfigAsync(path)).Unwrap() is Config config)
+            {
+                configs.Add(config);
+            }
         }
         return configs;
     }
 
-    private static async Task<List<string>> LoadPathsFromProfileAsync()
+    private static async Task<List<string>> GetDefaultPathsAsync()
     {
+        var directories = new List<string>
+        {
+            Environment.CurrentDirectory,
+        };
+        
         var meta = await LoadMetaConfigAsync();
-        return meta.BloopDirectories;
+        directories.AddRange(meta.BloopDirectories.Select(Path.GetFullPath));
+        
+        return directories.Distinct().ToList();
     }
 
     private static TomlModelOptions Options() => new()
