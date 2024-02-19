@@ -5,7 +5,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Terminal.Gui;
-using Terminal.Gui.Graphs;
 
 namespace Bloop.Cli.Ui;
 
@@ -34,16 +33,18 @@ internal class MainWindow : Toplevel
         Width = Dim.Fill();
         Height = Dim.Fill();
 
-        LeftPane = new FrameView("Requests") 
+        LeftPane = new FrameView() 
         {
+            Title = "Requests",
             X = 0, 
             Y = 0,
             Width = Dim.Percent(25),
             Height = Dim.Fill(1),
             CanFocus = true,
         };
-        RightPane = new FrameView("Results")
+        RightPane = new FrameView()
         {
+            Title = "Results",
             X = Pos.Right(LeftPane),
             Y = 0,
             Width = Dim.Fill(),
@@ -61,8 +62,8 @@ internal class MainWindow : Toplevel
         };
 
         RequestListView.SelectedItemChanged += RequestSelectionChanged;
-        RequestListView.KeyPress += RequestListKeyPressed;
-        RequestListView.MouseClick += RequestListClick;
+        RequestListView.KeyDown += RequestListKeyPressed;
+        RequestListView.OpenSelectedItem += RequestListClick;
 
         LeftPane.Add(RequestListView);
 
@@ -99,17 +100,17 @@ internal class MainWindow : Toplevel
         RightPane.Add(line);
         RightPane.Add(ResultsView);
 
-        ProcessingItem = new StatusItem(Key.Null, "", () => { });
+        ProcessingItem = new StatusItem(Key.Empty, "", () => { });
         MainStatusBar = new StatusBar
         {
             Visible = true,
             CanFocus = false,
             Items =
             [
-                new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Quit", RequestStop),
-                new StatusItem(Key.V | Key.AltMask, "~Alt-V~ Variables", SwitchToVariableView),
-                new StatusItem(Key.C | Key.CtrlMask, "~Ctrl-C~ Copy Result", CopyResultToClipboard),
-                new StatusItem(Key.Tab | Key.CtrlMask, "~Alt-Tab~ Switch Bloops", CycleConfigs),
+                new StatusItem(Key.Q.WithAlt, "~Alt-Q~ Quit", RequestStop),
+                new StatusItem(Key.V.WithAlt, "~Alt-V~ Variables", SwitchToVariableView),
+                new StatusItem(Key.C.WithAlt, "~Alt-C~ Copy Result", CopyResultToClipboard),
+                new StatusItem(Key.T.WithAlt, "~Alt-T~ Switch Bloops", CycleConfigs),
                 ProcessingItem
             ],
         };
@@ -120,7 +121,7 @@ internal class MainWindow : Toplevel
             CanFocus = false,
             Items =
             [
-                new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Back", SwitchToMainView)
+                new StatusItem(Key.Q.WithAlt, "~Alt-Q~ Back", SwitchToMainView)
             ],
         };
 
@@ -159,8 +160,9 @@ internal class MainWindow : Toplevel
         if (_selectedConfig == null) { return; }
         RemoveAll();
 
-        var frame = new FrameView("Variables")
+        var frame = new FrameView()
         {
+            Title = "Variables",
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
@@ -179,9 +181,10 @@ internal class MainWindow : Toplevel
             Y = 0,
             Width = Dim.Fill(),
             Height = Dim.Fill(),
-            Table = _scratchVariables,
+            Table = new DataTableSource(_scratchVariables),
         };
 
+        VariableTableView.CellActivationKey = KeyCode.Enter;
         VariableTableView.CellActivated += EditCurrentCell;
 
         frame.Add(VariableTableView);
@@ -189,22 +192,22 @@ internal class MainWindow : Toplevel
         Add(VariableStatusBar);
     }
 
-    private void EditCurrentCell(TableView.CellActivatedEventArgs e)
+    private void EditCurrentCell(object? sender, CellActivatedEventArgs e)
     {
-        if (e.Table == null || e.Col != 1) { return; }
-        var oldValue = e.Table.Rows[e.Row][e.Col] as string;
+        if (e.Table is not DataTableSource table || e.Col != 1) { return; }
+        var oldValue = table.DataTable.Rows[e.Row][e.Col] as string;
         var okPressed = false;
 
-        var ok = new Button("Ok", is_default: true);
-        ok.Clicked += () => { okPressed = true; Application.RequestStop(); };
-        var cancel = new Button("Cancel");
-        cancel.Clicked += () => { Application.RequestStop(); };
-        var dialog = new Dialog("Enter a value", ok, cancel);
+        var ok = new Button { Text = "Ok", IsDefault = true, };
+        ok.Clicked += (_, __) => { okPressed = true; Application.RequestStop(); };
+        var cancel = new Button{ Text = "Cancel", };
+        cancel.Clicked += (_, __) => { Application.RequestStop(); };
+        var dialog = new Dialog { Title = "Enter a value", Buttons = [ok, cancel], };
         var label = new Label
         {
             X = 0,
             Y = 1,
-            Text = e.Table.Rows[e.Row][0].ToString(),
+            Text = table.DataTable.Rows[e.Row][0].ToString(),
         };
         var textField = new TextField
         {
@@ -221,25 +224,23 @@ internal class MainWindow : Toplevel
         if (okPressed)
         {
             var newValue = textField.Text.ToString();
-            e.Table.Rows[e.Row][e.Col] = newValue as object ?? DBNull.Value;
+            table.DataTable.Rows[e.Row][e.Col] = newValue as object ?? DBNull.Value;
             VariableTableView?.Update();
         }
     }
 
-    private void RequestListKeyPressed(KeyEventEventArgs args)
+    private void RequestListKeyPressed(object? sender, Key args)
     {
-        if (args.KeyEvent.Key == Key.Enter)
+        if (args.KeyCode == Key.Enter)
         {
             _ = SendSelectedRequest();
         }
+        args.Handled = true;
     }
 
-    private void RequestListClick(MouseEventArgs args)
+    private void RequestListClick(object? sender, ListViewItemEventArgs e)
     {
-        if (args.MouseEvent.Flags.HasFlag(MouseFlags.Button1DoubleClicked))
-        {
-            _ = SendSelectedRequest();
-        }
+        _ = SendSelectedRequest();
     }
 
     private async Task SendSelectedRequest()
@@ -287,7 +288,7 @@ internal class MainWindow : Toplevel
         ProcessingItem.Title = $"Response Time: {stopwatch.Elapsed}";
     }
 
-    private void RequestSelectionChanged(ListViewItemEventArgs args)
+    private void RequestSelectionChanged(object? sender, ListViewItemEventArgs args)
     {
         _selectedRequest = _selectedConfig!.Requests[args.Item];
     }
