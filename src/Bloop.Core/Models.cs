@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using System.Text;
@@ -35,6 +36,7 @@ public record Request : BaseModel
     public override string ToString() => base.ToString();
 }
 
+[DebuggerDisplay("{Name}")]
 public record Variable : BaseModel
 {
     [IgnoreDataMember]
@@ -60,7 +62,7 @@ public record Variable : BaseModel
     public TimeSpan? ValueLifetime { get; set; }
     [IgnoreDataMember]
     public DateTime? ValueDateTime { get; set; }
-    public Dictionary<string, Variable>? Envs { get; set; }
+    public Dictionary<string, Variable> VariableSets { get; set; } = new();
     [IgnoreDataMember]
     public string? SatisfiedEnv { get; set; }
 

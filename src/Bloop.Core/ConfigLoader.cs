@@ -108,6 +108,7 @@ public class ConfigLoader
     {
         public Dictionary<string, Request> Request { get; set; } = new();
         public Dictionary<string, Variable> Variable { get; set; } = new();
+        public Dictionary<string, Dictionary<string, Variable>> Variableset { get; set; } = new();
         public Defaults Defaults { get; set; } = new();
 
         public Config ToConfig(string path)
@@ -126,6 +127,19 @@ public class ConfigLoader
             {
                 value.Name = key;
                 config.Variables.Add(value);
+            }
+            foreach (var (key, value) in Variableset.OrderBy(x => x.Key))
+            {
+                var variable = config.Variables.FirstOrDefault(x => x.Name == key);
+                if (variable == null)
+                {
+                    continue;
+                }
+                foreach (var (k, v) in value)
+                {
+                    v.Name = $"{variable.Name}::{k}";
+                    variable.VariableSets.Add(k, v);
+                }
             }
             return config;
         }

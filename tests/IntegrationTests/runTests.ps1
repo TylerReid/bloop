@@ -175,13 +175,13 @@ Write-Host $echo
 
 Assert "derp" $echo
 
-$echo = ./bloop envSpecific -e prod
+$echo = ./bloop envSpecific -s prod
 Write-Host "`nbloop with no env output:"
 Write-Host $echo
 
 Assert "prod env" $echo
 
-$echo = ./bloop envSpecific -e dev
+$echo = ./bloop envSpecific --set dev
 Write-Host "`nbloop with no env output:"
 Write-Host $echo
 

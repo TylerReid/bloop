@@ -100,9 +100,9 @@ query = { somethingElse = "${file}" }
 
 [variable.envSpecific]
 default = "derp"
-[variable.envSpecific.envs.dev]
+[variableset.envSpecific.dev]
 default = "dev env"
-[variable.envSpecific.envs.prod]
+[variableset.envSpecific.prod]
 default = "prod env"
 [request.envSpecific]
 uri = "http://localhost:5284/echo/query?something=${envSpecific}"

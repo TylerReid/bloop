@@ -92,8 +92,8 @@ command = "./scripts/testVariableScript.ps1"
 #### value_lifetime
   * optional timespan after which a new value will be retrieved. In the format `HH:MM:SS` Useful for token expiration.
 
-### Sets of variables
-Sometimes you want to have swappable sets of variables, for example when interacting with multiple deployment environments. To support this bloop variables support environment sets. Each variable in a variable set has all the properties of a normal top level variable. The `-e` or `--env` cli option can be used to select an env set.
+## Variable Sets
+Sometimes you want to have swappable sets of variables, for example when interacting with multiple deployment environments. To support this bloop variables support environment sets. Each variable in a variable set has all the properties of a normal top level variable. The `-s` or `--set` cli option can be used to select an env set.
 ```toml
 [request.someApi]
 uri = "https://${host}/floob"
@@ -102,24 +102,27 @@ headers = { Authorization = "Bearer ${token}" }
 [variable.host]
 default = "dev.example.com"
 
-[variable.host.staging]
+[variableset.host.staging]
 env = "STAGE_HOST"
 
-[variable.host.prod]
+[variableset.host.prod]
 file = ".prod_host"
 
-[variable.token.staging]
+[variable.token]
+file = ".token"
+
+[variableset.token.staging]
 command = "./getToken.ps1"
 command_args = "stage"
 value_lifetime = "00:10:00"
 
-[variable.token.prod]
+[variableset.token.prod]
 command = "./getToken.ps1"
 command_args = "prod"
 value_lifetime = "00:03:00"
 ```
 ```bash
-bloop someApi --env prod
+bloop someApi --set prod
 ```
 
 ## Default values

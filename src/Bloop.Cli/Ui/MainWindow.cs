@@ -1,4 +1,5 @@
 ﻿using Bloop.Core;
+using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics;
 using System.Text;
@@ -26,8 +27,8 @@ internal class MainWindow : Toplevel
     private StatusItem ProcessingItem { get; set; }
     private StatusBar VariableStatusBar { get; set; }
     private TableView? VariableTableView { get; set; }
-    private ListView? EnvListView { get; set; }
-    private StatusItem SelectedEnvStatus { get; set; }
+    private ListView? VariableSetListView { get; set; }
+    private StatusItem SelectedVariableSet { get; set; }
 
     public MainWindow()
     {
@@ -102,7 +103,7 @@ internal class MainWindow : Toplevel
         RightPane.Add(ResultsView);
 
         ProcessingItem = new StatusItem(Key.Null, "", () => { });
-        SelectedEnvStatus = new StatusItem(Key.Null, "", () => { });
+        SelectedVariableSet = new StatusItem(Key.X | Key.CtrlMask, "", SwitchVariableSet);
 
         MainStatusBar = new StatusBar
         {
@@ -112,10 +113,9 @@ internal class MainWindow : Toplevel
             [
                 new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Quit", RequestStop),
                 new StatusItem(Key.V | Key.AltMask, "~Alt-V~ Variables", SwitchToVariableView),
-                new StatusItem(Key.E | Key.CtrlMask, "~Ctrl-E~ Switch Envs", SwitchEnvs),
                 new StatusItem(Key.C | Key.CtrlMask, "~Ctrl-C~ Copy Result", CopyResultToClipboard),
                 new StatusItem(Key.Tab | Key.CtrlMask, "~Alt-Tab~ Switch Bloops", CycleConfigs),
-                SelectedEnvStatus,
+                SelectedVariableSet,
                 ProcessingItem,
             ],
         };
@@ -196,23 +196,23 @@ internal class MainWindow : Toplevel
         Add(VariableStatusBar);
     }
 
-    private void SwitchEnvs()
+    private void SwitchVariableSet()
     {
         if (_selectedConfig == null) { return; }
 
-        var allEnvs = _selectedConfig.Variables
-            .Where(x => x.Envs is not null)
-            .SelectMany(x => x.Envs!.Keys)
+        var allSets = _selectedConfig.Variables
+            .Where(x => x.VariableSets is not null)
+            .SelectMany(x => x.VariableSets!.Keys)
             .ToList();
 
-        EnvListView = new ListView
+        VariableSetListView = new ListView
         {
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
             Height = Dim.Fill(1),
         };
-        EnvListView.SetSource(allEnvs);
+        VariableSetListView.SetSource(allSets);
 
         var okPressed = false;
         var shouldClear = false;
@@ -225,8 +225,8 @@ internal class MainWindow : Toplevel
         clear.Clicked += () => { shouldClear = true; Application.RequestStop(); };
         var dialog = new Dialog("Enter a value", ok, cancel, clear);
 
-        dialog.Add(EnvListView);
-        EnvListView.SetFocus();
+        dialog.Add(VariableSetListView);
+        VariableSetListView.SetFocus();
 
         Application.Run(dialog);
 
@@ -237,14 +237,14 @@ internal class MainWindow : Toplevel
 
         if (okPressed)
         {
-            _selectedConfig.Env = allEnvs[EnvListView.SelectedItem];
+            _selectedConfig.Env = allSets[VariableSetListView.SelectedItem];
         }
         RefreshSelectedEnvDisplay();
     }
 
     private void RefreshSelectedEnvDisplay()
     {
-        SelectedEnvStatus.Title = $"Env: {_selectedConfig?.Env ?? "None"}";
+        SelectedVariableSet.Title = $"~Ctrl-X~ Set: {_selectedConfig?.Env ?? "None"}";
         MainStatusBar.SetChildNeedsDisplay();
     }
 

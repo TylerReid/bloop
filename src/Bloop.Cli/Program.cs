@@ -153,7 +153,7 @@ public class Program
         }
 
         var config = configLoad.UnwrapSuccess();
-        config.Env = options.Env;
+        config.Env = options.VariableSet;
 
         foreach (var optionVar in options.Variables ?? Enumerable.Empty<string>())
         {
@@ -197,7 +197,7 @@ public class Program
         }
 
         var config = configLoad.UnwrapSuccess();
-        config.Env = options.Env;
+        config.Env = options.VariableSet;
         var blooper = CreateBlooper(options);
         
         var variable = config.Variables.FirstOrDefault(x => x.Name == options.VariableName);

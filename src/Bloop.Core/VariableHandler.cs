@@ -92,7 +92,7 @@ public partial class VariableHandler
             }
         }
 
-        if (config.Env != null && (variable.Envs?.TryGetValue(config.Env, out var selectedEnvVariable) ?? false))
+        if (config.Env != null && (variable.VariableSets?.TryGetValue(config.Env, out var selectedEnvVariable) ?? false))
         {
             var result = await SatisfyVariable(blooper, config, variable.Name, selectedEnvVariable);
             if (result != null)

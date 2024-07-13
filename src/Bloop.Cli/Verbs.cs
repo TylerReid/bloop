@@ -23,8 +23,8 @@ public class RequestOptions : BaseOptions
     public bool Verbose { get; set; } = false;
     [Option("var", HelpText = "variables provided in a `key=value,key2=value2` format", Separator = ',')]
     public IEnumerable<string>? Variables { get; set; }
-    [Option('e', "env", HelpText = "which set of variables to use defined by a variable's `envs`")]
-    public string? Env { get; set; }
+    [Option('s', "set", HelpText = "which set of variables to use")]
+    public string? VariableSet { get; set; }
 }
 
 [Verb("list", HelpText = "list requests and variables")]
@@ -44,6 +44,6 @@ public class VariableOptions : BaseOptions
 {
     [Value(0, MetaName = "variable", HelpText = "name of the variable to get a value for")]
     public string? VariableName { get; set; }
-    [Option('e', "env", HelpText = "which set of variables to use defined by a variable's `envs`")]
-    public string? Env { get; set; }
+    [Option('s', "set", HelpText = "which set of variables to use")]
+    public string? VariableSet { get; set; }
 }
