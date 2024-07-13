@@ -70,6 +70,11 @@ public partial class VariableHandler
     {
         variable.ClearIfExpired();
 
+        if (config.Env != variable.SatisfiedEnv)
+        {
+            variable.Value = null;
+        }
+
         if (variable.Value != null)
         {
             return null;
@@ -85,6 +90,18 @@ public partial class VariableHandler
             {
                 return result;
             }
+        }
+
+        if (config.Env != null && (variable.Envs?.TryGetValue(config.Env, out var selectedEnvVariable) ?? false))
+        {
+            var result = await SatisfyVariable(blooper, config, variable.Name, selectedEnvVariable);
+            if (result != null)
+            {
+                return result;
+            }
+            variable.Value = selectedEnvVariable.Value;
+            variable.SatisfiedEnv = config.Env;
+            return null;
         }
 
         if (variable is { Jpath: not null, Source: not null })

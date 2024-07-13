@@ -11,6 +11,8 @@ public record Config : BaseModel
 {
     [IgnoreDataMember]
     public string Directory { get; set; } = "";
+    [IgnoreDataMember]
+    public string? Env { get; set; }
     public List<Request> Requests { get; set; } = new();
     public List<Variable> Variables { get; set; } = new();
     public Defaults Defaults { get; set; } = new();
@@ -58,6 +60,9 @@ public record Variable : BaseModel
     public TimeSpan? ValueLifetime { get; set; }
     [IgnoreDataMember]
     public DateTime? ValueDateTime { get; set; }
+    public Dictionary<string, Variable>? Envs { get; set; }
+    [IgnoreDataMember]
+    public string? SatisfiedEnv { get; set; }
 
     public bool IsExpired() => ValueLifetime.HasValue 
             && ValueDateTime.HasValue 

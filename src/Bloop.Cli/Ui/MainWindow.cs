@@ -26,6 +26,8 @@ internal class MainWindow : Toplevel
     private StatusItem ProcessingItem { get; set; }
     private StatusBar VariableStatusBar { get; set; }
     private TableView? VariableTableView { get; set; }
+    private ListView? EnvListView { get; set; }
+    private StatusItem SelectedEnvStatus { get; set; }
 
     public MainWindow()
     {
@@ -100,6 +102,8 @@ internal class MainWindow : Toplevel
         RightPane.Add(ResultsView);
 
         ProcessingItem = new StatusItem(Key.Null, "", () => { });
+        SelectedEnvStatus = new StatusItem(Key.Null, "", () => { });
+
         MainStatusBar = new StatusBar
         {
             Visible = true,
@@ -108,9 +112,11 @@ internal class MainWindow : Toplevel
             [
                 new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Quit", RequestStop),
                 new StatusItem(Key.V | Key.AltMask, "~Alt-V~ Variables", SwitchToVariableView),
+                new StatusItem(Key.E | Key.CtrlMask, "~Ctrl-E~ Switch Envs", SwitchEnvs),
                 new StatusItem(Key.C | Key.CtrlMask, "~Ctrl-C~ Copy Result", CopyResultToClipboard),
                 new StatusItem(Key.Tab | Key.CtrlMask, "~Alt-Tab~ Switch Bloops", CycleConfigs),
-                ProcessingItem
+                SelectedEnvStatus,
+                ProcessingItem,
             ],
         };
 
@@ -127,6 +133,7 @@ internal class MainWindow : Toplevel
         _scratchVariables.Columns.Add("Name", typeof(string));
         _scratchVariables.Columns.Add("Value", typeof(string));
 
+        RefreshSelectedEnvDisplay();
         SwitchToMainView();
 
         _ = LoadAsync();
@@ -187,6 +194,58 @@ internal class MainWindow : Toplevel
         frame.Add(VariableTableView);
         Add(frame);
         Add(VariableStatusBar);
+    }
+
+    private void SwitchEnvs()
+    {
+        if (_selectedConfig == null) { return; }
+
+        var allEnvs = _selectedConfig.Variables
+            .Where(x => x.Envs is not null)
+            .SelectMany(x => x.Envs!.Keys)
+            .ToList();
+
+        EnvListView = new ListView
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Fill(1),
+        };
+        EnvListView.SetSource(allEnvs);
+
+        var okPressed = false;
+        var shouldClear = false;
+
+        var ok = new Button("Ok", is_default: true);
+        ok.Clicked += () => { okPressed = true; Application.RequestStop(); };
+        var cancel = new Button("Cancel");
+        cancel.Clicked += () => { Application.RequestStop(); };
+        var clear = new Button("Clear Env");
+        clear.Clicked += () => { shouldClear = true; Application.RequestStop(); };
+        var dialog = new Dialog("Enter a value", ok, cancel, clear);
+
+        dialog.Add(EnvListView);
+        EnvListView.SetFocus();
+
+        Application.Run(dialog);
+
+        if (shouldClear)
+        {
+            _selectedConfig.Env = null;
+        }
+
+        if (okPressed)
+        {
+            _selectedConfig.Env = allEnvs[EnvListView.SelectedItem];
+        }
+        RefreshSelectedEnvDisplay();
+    }
+
+    private void RefreshSelectedEnvDisplay()
+    {
+        SelectedEnvStatus.Title = $"Env: {_selectedConfig?.Env ?? "None"}";
+        MainStatusBar.SetChildNeedsDisplay();
     }
 
     private void EditCurrentCell(TableView.CellActivatedEventArgs e)

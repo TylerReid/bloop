@@ -60,6 +60,7 @@ public class Program
 
     private static int RunUi(RequestOptions request)
     {
+        // pass the request options to the ui window
         Application.Run<MainWindow>();
         Application.Shutdown();
         return 0;
@@ -152,6 +153,7 @@ public class Program
         }
 
         var config = configLoad.UnwrapSuccess();
+        config.Env = options.Env;
 
         foreach (var optionVar in options.Variables ?? Enumerable.Empty<string>())
         {
@@ -195,6 +197,7 @@ public class Program
         }
 
         var config = configLoad.UnwrapSuccess();
+        config.Env = options.Env;
         var blooper = CreateBlooper(options);
         
         var variable = config.Variables.FirstOrDefault(x => x.Name == options.VariableName);

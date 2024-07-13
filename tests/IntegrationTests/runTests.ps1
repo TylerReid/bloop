@@ -169,6 +169,24 @@ Write-Host $echo
 
 Assert "blooooooopblorp" $echo
 
+$echo = ./bloop envSpecific
+Write-Host "`nbloop with no env output:"
+Write-Host $echo
+
+Assert "derp" $echo
+
+$echo = ./bloop envSpecific -e prod
+Write-Host "`nbloop with no env output:"
+Write-Host $echo
+
+Assert "prod env" $echo
+
+$echo = ./bloop envSpecific -e dev
+Write-Host "`nbloop with no env output:"
+Write-Host $echo
+
+Assert "dev env" $echo
+
 $testJob | Stop-Job
 Remove-Item ./bloop.exe -ErrorAction SilentlyContinue
 Remove-Item ./bloop -ErrorAction SilentlyContinue
