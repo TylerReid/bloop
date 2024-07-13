@@ -217,6 +217,14 @@ internal class MainWindow : Toplevel
         var okPressed = false;
         var shouldClear = false;
 
+        VariableSetListView.MouseClick += (args) =>
+        {
+            if (args.MouseEvent.Flags.HasFlag(MouseFlags.Button1DoubleClicked))
+            {
+                okPressed = true;
+                Application.RequestStop();
+            }
+        };
         var ok = new Button("Ok", is_default: true);
         ok.Clicked += () => { okPressed = true; Application.RequestStop(); };
         var cancel = new Button("Cancel");
