@@ -113,10 +113,13 @@ command = "./getToken.ps1"
 command_args = "stage"
 value_lifetime = "00:10:00"
 
-[variable.token.staging]
+[variable.token.prod]
 command = "./getToken.ps1"
 command_args = "prod"
 value_lifetime = "00:03:00"
+```
+```bash
+bloop someApi --env prod
 ```
 
 ## Default values
