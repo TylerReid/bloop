@@ -1,28 +1,10 @@
 # Bloop
-Bloops things! A postman alternative that uses [TOML](https://toml.io) as a configuration file, and automatically detects used variables and performs requests needed to satisfy them.
+Bloops things! A postman alternative that uses [TOML](https://toml.io) as a configuration file. It automatically detects used variables and performs actions needed to satisfy them, such as reading from a file, making another request and pulling out values, or running an arbitrary script.
+
+Bloops runs on MacOs, Linux, and Windows.
 
 ## Usage
-
-```console
-$ bloop list
-requests:
-somejson:       { Uri: https://stackoverflow.com/api/recent-chat, Method: GET }
-echoquery:      { Uri: http://localhost:5284/echo/query?something=${activeUsers}, Method: GET }
-
-variables:
-activeUsers:    { Source: somejson, Jpath: $.activeUsers }
-```
-```console
-$ bloop echoquery --verbose
-Request Uri: http://localhost:5284/echo/query?something=42
-Status: OK
-
-42
-```
-```console
-$ bloop validate
-variable ${token} is used in `getaccount` but is not defined as a variable
-```
+Bloop can be used either as [a cli](README.cli.md) or as [a terminal gui](README.gui.md).
 
 ## Requests
 Named http requests to make
@@ -136,5 +118,7 @@ Header values that will be added to every request if not already specified
 Bloop requires [the latest .net](https://dotnet.microsoft.com/en-us/download) for the main application, and [powershell](https://github.com/PowerShell/PowerShell) for scripts and tests
 
 To build: `dotnet build`
+
 To produce release mode outputs in the `./releases/` directory: `./scripts/buildCli.ps1`
+
 To run integration tests: `./tests/IntegrationTests/runTests.ps1`
