@@ -102,6 +102,8 @@ query = { somethingElse = "${file}" }
 default = "derp"
 [variableset.envSpecific.dev]
 default = "dev env"
+[variableset.needsEncode.dev]
+default = "dev@env"
 [variableset.envSpecific.prod]
 default = "prod env"
 [request.envSpecific]

@@ -203,6 +203,7 @@ internal class MainWindow : Toplevel
         var allSets = _selectedConfig.Variables
             .Where(x => x.VariableSets is not null)
             .SelectMany(x => x.VariableSets!.Keys)
+            .Distinct()
             .ToList();
 
         VariableSetListView = new ListView
