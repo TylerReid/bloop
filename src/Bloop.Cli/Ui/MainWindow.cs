@@ -151,8 +151,10 @@ internal class MainWindow : Toplevel
     {
         foreach (DataRow row in _scratchVariables.Rows)
         {
-            _selectedConfig!.Variables
-                .First(x => x.Name == (string)row["Name"]).Value = row["Value"] as string;
+            var variable =_selectedConfig!.Variables
+                .First(x => x.Name == (string)row["Name"]);
+            variable.Value = row["Value"] as string;
+            variable.SatisfiedEnv = _selectedConfig.Env;
         }
         _scratchVariables.Clear();
         RemoveAll();
