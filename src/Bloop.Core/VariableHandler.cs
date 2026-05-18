@@ -201,7 +201,7 @@ public partial class VariableHandler
                 return new Error($"variable command exited with code {process.ExitCode} and output:\n{await process.StandardError.ReadToEndAsync()}");
             }
 
-            return await process.StandardOutput.ReadToEndAsync();
+            return (await process.StandardOutput.ReadToEndAsync()).TrimEnd();
         }
         catch (Exception e)
         {

@@ -7,7 +7,7 @@ param (
 )
 
 function Build($includeRuntime, $path) {
-    $targets = @("linux-x64", "win-x64", "osx-x64")
+    $targets = @("linux-x64", "win-x64", "osx-x64", "osx-arm64")
     foreach ($target in $targets) {
         dotnet publish ./src/Bloop.Cli/Bloop.Cli.csproj --nologo `
             -r $target -c Release $includeRuntime -p:PublishSingleFile=true `
@@ -34,7 +34,7 @@ if (!$skipResultCopy) {
 }
 
 if ($buildRelease) {
-    $targets = @("linux-x64", "win-x64", "osx-x64")
+    $targets = @("linux-x64", "win-x64", "osx-x64", "osx-arm64")
     foreach ($target in $targets) {
         Compress-Archive -Force -Path ./releases/big/$target/bloop* -DestinationPath ./releases/$target.zip
     }
