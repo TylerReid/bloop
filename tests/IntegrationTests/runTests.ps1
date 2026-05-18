@@ -149,7 +149,7 @@ $echo = ./bloop argsWithVar
 Write-Host "`nbloop argsWithVar output:"
 Write-Host $echo
 
-Assert "blorp " $echo
+Assert "blorp" $echo
 
 $echo = ./bloop variable file
 Write-Host "`nbloop variable file output:"
