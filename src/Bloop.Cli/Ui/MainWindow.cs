@@ -1,16 +1,19 @@
 ﻿using Bloop.Core;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Terminal.Gui;
-using Terminal.Gui.Graphs;
+using Terminal.Gui.App;
+using Terminal.Gui.Views;
+using Terminal.Gui.ViewBase;
+using Terminal.Gui.Input;
 
 namespace Bloop.Cli.Ui;
 
-internal class MainWindow : Toplevel
+internal class MainWindow : Runnable
 {
     private List<Config> _configs = new();
     private Config? _selectedConfig;
@@ -24,11 +27,11 @@ internal class MainWindow : Toplevel
     private TextView ResultDetails { get; set; }
     private TextView ResultsView { get; set; }
     private StatusBar MainStatusBar { get; set; }
-    private StatusItem ProcessingItem { get; set; }
+    private Shortcut ProcessingItem { get; set; }
     private StatusBar VariableStatusBar { get; set; }
     private TableView? VariableTableView { get; set; }
     private ListView? VariableSetListView { get; set; }
-    private StatusItem SelectedVariableSet { get; set; }
+    private Shortcut SelectedVariableSet { get; set; }
 
     public MainWindow()
     {
@@ -37,16 +40,18 @@ internal class MainWindow : Toplevel
         Width = Dim.Fill();
         Height = Dim.Fill();
 
-        LeftPane = new FrameView("Requests") 
+        LeftPane = new FrameView
         {
-            X = 0, 
+            Title = "Requests",
+            X = 0,
             Y = 0,
             Width = Dim.Percent(25),
             Height = Dim.Fill(1),
             CanFocus = true,
         };
-        RightPane = new FrameView("Results")
+        RightPane = new FrameView
         {
+            Title = "Results",
             X = Pos.Right(LeftPane),
             Y = 0,
             Width = Dim.Fill(),
@@ -60,12 +65,11 @@ internal class MainWindow : Toplevel
             Y = 0,
             Width = Dim.Fill(),
             Height = Dim.Fill(),
-            AllowsMarking = false,
         };
 
-        RequestListView.SelectedItemChanged += RequestSelectionChanged;
-        RequestListView.KeyPress += RequestListKeyPressed;
-        RequestListView.MouseClick += RequestListClick;
+        RequestListView.ValueChanged += RequestSelectionChanged;
+        RequestListView.KeyDown += RequestListKeyDown;
+        RequestListView.MouseEvent += RequestListMouseEvent;
 
         LeftPane.Add(RequestListView);
 
@@ -76,17 +80,17 @@ internal class MainWindow : Toplevel
             Width = Dim.Fill(),
             Height = Dim.Percent(10),
             CanFocus = true,
-            ColorScheme = new ColorScheme(),
             ReadOnly = true,
         };
 
-        var line = new LineView
+        var line = new Line
         {
             X = 0,
             Y = Pos.Bottom(ResultDetails),
+            Width = Dim.Fill(),
             Orientation = Orientation.Horizontal,
         };
-        
+
         ResultsView = new TextView
         {
             X = 0,
@@ -94,7 +98,6 @@ internal class MainWindow : Toplevel
             Width = Dim.Fill(),
             Height = Dim.Fill(),
             CanFocus = true,
-            ColorScheme = new ColorScheme(),
             ReadOnly = true,
         };
 
@@ -102,33 +105,23 @@ internal class MainWindow : Toplevel
         RightPane.Add(line);
         RightPane.Add(ResultsView);
 
-        ProcessingItem = new StatusItem(Key.Null, "", () => { });
-        SelectedVariableSet = new StatusItem(Key.X | Key.CtrlMask, "", SwitchVariableSet);
+        ProcessingItem = new Shortcut(Key.Empty, "", null) { BindKeyToApplication = false };
+        SelectedVariableSet = new Shortcut(Key.X.WithCtrl, "", SwitchVariableSet) { BindKeyToApplication = true };
 
-        MainStatusBar = new StatusBar
-        {
-            Visible = true,
-            CanFocus = false,
-            Items =
-            [
-                new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Quit", RequestStop),
-                new StatusItem(Key.V | Key.AltMask, "~Alt-V~ Variables", SwitchToVariableView),
-                new StatusItem(Key.C | Key.CtrlMask, "~Ctrl-C~ Copy Result", CopyResultToClipboard),
-                new StatusItem(Key.Tab | Key.CtrlMask, "~Alt-Tab~ Switch Bloops", CycleConfigs),
-                SelectedVariableSet,
-                ProcessingItem,
-            ],
-        };
+        MainStatusBar = new StatusBar();
+        MainStatusBar.Add(
+            new Shortcut(Key.Q.WithCtrl, "Quit", () => App!.RequestStop()) { BindKeyToApplication = true },
+            new Shortcut(Key.V.WithAlt, "Variables", SwitchToVariableView) { BindKeyToApplication = true },
+            new Shortcut(Key.C.WithCtrl, "Copy Result", CopyResultToClipboard) { BindKeyToApplication = true },
+            new Shortcut(Key.Tab.WithCtrl, "Switch Bloops", CycleConfigs) { BindKeyToApplication = true },
+            SelectedVariableSet,
+            ProcessingItem
+        );
 
-        VariableStatusBar = new StatusBar
-        {
-            Visible = true,
-            CanFocus = false,
-            Items =
-            [
-                new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Back", SwitchToMainView)
-            ],
-        };
+        VariableStatusBar = new StatusBar();
+        VariableStatusBar.Add(
+            new Shortcut(Key.Q.WithCtrl, "Back", SwitchToMainView) { BindKeyToApplication = true }
+        );
 
         _scratchVariables.Columns.Add("Name", typeof(string));
         _scratchVariables.Columns.Add("Value", typeof(string));
@@ -141,9 +134,9 @@ internal class MainWindow : Toplevel
 
     private void CopyResultToClipboard()
     {
-        if (ResultsView.Text.ToString() != null)
+        if (ResultsView.Text != null)
         {
-            Clipboard.TrySetClipboardData(ResultsView.Text.ToString());
+            App!.Clipboard?.TrySetClipboardData(ResultsView.Text);
         }
     }
 
@@ -151,7 +144,7 @@ internal class MainWindow : Toplevel
     {
         foreach (DataRow row in _scratchVariables.Rows)
         {
-            var variable =_selectedConfig!.Variables
+            var variable = _selectedConfig!.Variables
                 .First(x => x.Name == (string)row["Name"]);
             variable.Value = row["Value"] as string;
             variable.SatisfiedEnv = _selectedConfig.Env;
@@ -168,8 +161,9 @@ internal class MainWindow : Toplevel
         if (_selectedConfig == null) { return; }
         RemoveAll();
 
-        var frame = new FrameView("Variables")
+        var frame = new FrameView
         {
+            Title = "Variables",
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
@@ -188,10 +182,14 @@ internal class MainWindow : Toplevel
             Y = 0,
             Width = Dim.Fill(),
             Height = Dim.Fill(),
-            Table = _scratchVariables,
+            Table = new DataTableSource(_scratchVariables),
         };
 
-        VariableTableView.CellActivated += EditCurrentCell;
+        VariableTableView.Accepted += (_, _) =>
+        {
+            var cell = VariableTableView.Value!.SelectedCell;
+            EditCurrentCell(cell.X, cell.Y);
+        };
 
         frame.Add(VariableTableView);
         Add(frame);
@@ -215,66 +213,76 @@ internal class MainWindow : Toplevel
             Width = Dim.Fill(),
             Height = Dim.Fill(1),
         };
-        VariableSetListView.SetSource(allSets);
+        VariableSetListView.SetSource(new ObservableCollection<string>(allSets));
 
         var okPressed = false;
         var shouldClear = false;
 
-        VariableSetListView.MouseClick += (args) =>
+        VariableSetListView.MouseEvent += (_, e) =>
         {
-            if (args.MouseEvent.Flags.HasFlag(MouseFlags.Button1DoubleClicked))
+            if (e.Flags.HasFlag(MouseFlags.LeftButtonDoubleClicked))
             {
                 okPressed = true;
-                Application.RequestStop();
+                App!.RequestStop();
+                e.Handled = true;
             }
         };
-        var ok = new Button("Ok", is_default: true);
-        ok.Clicked += () => { okPressed = true; Application.RequestStop(); };
-        var cancel = new Button("Cancel");
-        cancel.Clicked += () => { Application.RequestStop(); };
-        var clear = new Button("Clear Env");
-        clear.Clicked += () => { shouldClear = true; Application.RequestStop(); };
-        var dialog = new Dialog("Enter a value", ok, cancel, clear);
 
+        var ok = new Button { Text = "Ok", IsDefault = true };
+        ok.Accepted += (_, _) => { okPressed = true; App!.RequestStop(); };
+        var cancel = new Button { Text = "Cancel" };
+        cancel.Accepted += (_, _) => { App!.RequestStop(); };
+        var clear = new Button { Text = "Clear Env" };
+        clear.Accepted += (_, _) => { shouldClear = true; App!.RequestStop(); };
+
+        var dialog = new Dialog { Title = "Select Variable Set" };
+        dialog.AddButton(ok);
+        dialog.AddButton(cancel);
+        dialog.AddButton(clear);
         dialog.Add(VariableSetListView);
-        VariableSetListView.SetFocus();
+        VariableSetListView.HasFocus = true;
 
-        Application.Run(dialog);
+        App!.Run(dialog);
+        dialog.Dispose();
 
         if (shouldClear)
         {
             _selectedConfig.Env = null;
         }
 
-        if (okPressed)
+        if (okPressed && VariableSetListView.SelectedItem.HasValue)
         {
-            _selectedConfig.Env = allSets[VariableSetListView.SelectedItem];
+            _selectedConfig.Env = allSets[VariableSetListView.SelectedItem.Value];
         }
         RefreshSelectedEnvDisplay();
     }
 
     private void RefreshSelectedEnvDisplay()
     {
-        SelectedVariableSet.Title = $"~Ctrl-X~ Set: {_selectedConfig?.Env ?? "None"}";
-        MainStatusBar.SetChildNeedsDisplay();
+        SelectedVariableSet.Title = $"Set: {_selectedConfig?.Env ?? "None"}";
+        MainStatusBar.SetNeedsDraw();
     }
 
-    private void EditCurrentCell(TableView.CellActivatedEventArgs e)
+    private void EditCurrentCell(int col, int row)
     {
-        if (e.Table == null || e.Col != 1) { return; }
-        var oldValue = e.Table.Rows[e.Row][e.Col] as string;
+        if (col != 1) { return; }
+        var oldValue = _scratchVariables.Rows[row][col] as string;
         var okPressed = false;
 
-        var ok = new Button("Ok", is_default: true);
-        ok.Clicked += () => { okPressed = true; Application.RequestStop(); };
-        var cancel = new Button("Cancel");
-        cancel.Clicked += () => { Application.RequestStop(); };
-        var dialog = new Dialog("Enter a value", ok, cancel);
+        var ok = new Button { Text = "Ok", IsDefault = true };
+        ok.Accepted += (_, _) => { okPressed = true; App!.RequestStop(); };
+        var cancel = new Button { Text = "Cancel" };
+        cancel.Accepted += (_, _) => { App!.RequestStop(); };
+
+        var dialog = new Dialog { Title = "Enter a value" };
+        dialog.AddButton(ok);
+        dialog.AddButton(cancel);
+
         var label = new Label
         {
             X = 0,
             Y = 1,
-            Text = e.Table.Rows[e.Row][0].ToString(),
+            Text = _scratchVariables.Rows[row][0]?.ToString() ?? string.Empty,
         };
         var textField = new TextField
         {
@@ -285,30 +293,33 @@ internal class MainWindow : Toplevel
         };
 
         dialog.Add(label, textField);
-        textField.SetFocus();
-        Application.Run(dialog);
+        textField.HasFocus = true;
+        App!.Run(dialog);
+        dialog.Dispose();
 
         if (okPressed)
         {
-            var newValue = textField.Text.ToString();
-            e.Table.Rows[e.Row][e.Col] = newValue as object ?? DBNull.Value;
-            VariableTableView?.Update();
+            var newValue = textField.Text;
+            _scratchVariables.Rows[row][col] = newValue as object ?? DBNull.Value;
+            VariableTableView?.SetNeedsDraw();
         }
     }
 
-    private void RequestListKeyPressed(KeyEventEventArgs args)
+    private void RequestListKeyDown(object? sender, Key args)
     {
-        if (args.KeyEvent.Key == Key.Enter)
+        if (args == Key.Enter)
         {
             _ = SendSelectedRequest();
+            args.Handled = true;
         }
     }
 
-    private void RequestListClick(MouseEventArgs args)
+    private void RequestListMouseEvent(object? sender, Mouse args)
     {
-        if (args.MouseEvent.Flags.HasFlag(MouseFlags.Button1DoubleClicked))
+        if (args.Flags.HasFlag(MouseFlags.LeftButtonDoubleClicked))
         {
             _ = SendSelectedRequest();
+            args.Handled = true;
         }
     }
 
@@ -357,9 +368,12 @@ internal class MainWindow : Toplevel
         ProcessingItem.Title = $"Response Time: {stopwatch.Elapsed}";
     }
 
-    private void RequestSelectionChanged(ListViewItemEventArgs args)
+    private void RequestSelectionChanged(object? sender, ValueChangedEventArgs<int?> args)
     {
-        _selectedRequest = _selectedConfig!.Requests[args.Item];
+        if (args.NewValue.HasValue)
+        {
+            _selectedRequest = _selectedConfig!.Requests[args.NewValue.Value];
+        }
     }
 
     private async Task LoadAsync()
@@ -372,9 +386,10 @@ internal class MainWindow : Toplevel
     {
         _selectedConfig = config;
         if (config == null) { return; }
-        RequestListView.SetSource(config.Requests.Select(x => x.Name).ToList());
+        RequestListView.SetSource(new ObservableCollection<string>(
+            config.Requests.Select(x => x.Name)));
     }
-    
+
     private void CycleConfigs()
     {
         if (_selectedConfig == null)

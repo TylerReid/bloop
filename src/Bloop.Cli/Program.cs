@@ -3,8 +3,9 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using CommandLine;
 using Error = Bloop.Core.Error;
-using Terminal.Gui;
+using Terminal.Gui.App;
 using Bloop.Cli.Ui;
+using Terminal.Gui.Configuration;
 
 namespace Bloop.Cli;
 
@@ -60,9 +61,11 @@ public class Program
 
     private static int RunUi(RequestOptions request)
     {
-        // pass the request options to the ui window
-        Application.Run<MainWindow>();
-        Application.Shutdown();
+        ConfigurationManager.Enable(ConfigLocations.AppHome);
+        
+        IApplication app = Application.Create().Init();
+        app.Run<MainWindow>();
+        app.Dispose();
         return 0;
     }
 
