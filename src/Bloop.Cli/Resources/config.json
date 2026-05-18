@@ -1,0 +1,67 @@
+{
+  "$schema": "https://gui-cs.github.io/Terminal.Gui/schemas/tui-config-schema.json",
+  "Theme": "Bloop",
+  "Themes": [
+    {
+      "Bloop": {
+        "Window.DefaultBorderStyle": "Single",
+        "Dialog.DefaultBorderStyle": "Heavy",
+        "Dialog.DefaultShadow": "Transparent",
+        "FrameView.DefaultBorderStyle": "Rounded",
+        "Button.DefaultShadow": "None",
+        "Schemes": [
+          {
+            "Base": {
+              "Normal":    { "Foreground": "White",       "Background": "Black"       },
+              "Focus":     { "Foreground": "Black",       "Background": "BrightGreen" },
+              "HotNormal": { "Foreground": "BrightGreen", "Background": "Black"       },
+              "HotFocus":  { "Foreground": "Black",       "Background": "Green"       },
+              "Highlight": { "Foreground": "Black",       "Background": "BrightGreen" },
+              "Active":    { "Foreground": "Black",       "Background": "Green"       },
+              "Disabled":  { "Foreground": "DarkGray",    "Background": "Black"       },
+              "ReadOnly":  { "Foreground": "Gainsboro",        "Background": "Black"       },
+              "Editable":  { "Foreground": "White",       "Background": "DarkGray"    }
+            }
+          },
+          {
+            "Menu": {
+              "Normal":    { "Foreground": "White",       "Background": "Black"       },
+              "Focus":     { "Foreground": "Black",       "Background": "BrightGreen" },
+              "HotNormal": { "Foreground": "BrightGreen", "Background": "Black"       },
+              "HotFocus":  { "Foreground": "Black",       "Background": "Green"       },
+              "Active":    { "Foreground": "Black",       "Background": "Green"       },
+              "Disabled":  { "Foreground": "DarkGray",    "Background": "Black"       }
+            }
+          },
+          {
+            "Accent": {
+              "Normal":    { "Foreground": "BrightGreen", "Background": "Black"       },
+              "Focus":     { "Foreground": "Black",       "Background": "BrightGreen" },
+              "HotNormal": { "Foreground": "White",       "Background": "Black"       },
+              "HotFocus":  { "Foreground": "Black",       "Background": "Green"       },
+              "Highlight": { "Foreground": "Black",       "Background": "BrightGreen" }
+            }
+          },
+          {
+            "Dialog": {
+              "Normal":    { "Foreground": "White",       "Background": "DarkGray"    },
+              "Focus":     { "Foreground": "Black",       "Background": "BrightGreen" },
+              "HotNormal": { "Foreground": "BrightGreen", "Background": "DarkGray"    },
+              "HotFocus":  { "Foreground": "Black",       "Background": "Green"       },
+              "Active":    { "Foreground": "White",       "Background": "Gray"        },
+              "Disabled":  { "Foreground": "DarkGray",    "Background": "DarkGray"    }
+            }
+          },
+          {
+            "Error": {
+              "Normal":    { "Foreground": "White",       "Background": "Red"         },
+              "Focus":     { "Foreground": "Black",       "Background": "BrightRed"   },
+              "HotNormal": { "Foreground": "Yellow",      "Background": "Red"         },
+              "HotFocus":  { "Foreground": "Black",       "Background": "BrightRed"   }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

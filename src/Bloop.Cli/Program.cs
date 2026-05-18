@@ -4,8 +4,9 @@ using System.Text.Json.Nodes;
 using CommandLine;
 using Error = Bloop.Core.Error;
 using Terminal.Gui.App;
-using Bloop.Cli.Ui;
 using Terminal.Gui.Configuration;
+using Bloop.Cli.Ui;
+using Terminal.Gui.Drawing;
 
 namespace Bloop.Cli;
 
@@ -61,8 +62,7 @@ public class Program
 
     private static int RunUi(RequestOptions request)
     {
-        ConfigurationManager.Enable(ConfigLocations.AppHome);
-        
+        ConfigurationManager.Enable(ConfigLocations.All);
         IApplication app = Application.Create().Init();
         app.Run<MainWindow>();
         app.Dispose();

@@ -7,6 +7,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Terminal.Gui.App;
+using Terminal.Gui.Configuration;
 using Terminal.Gui.Views;
 using Terminal.Gui.ViewBase;
 using Terminal.Gui.Input;
@@ -28,6 +29,7 @@ internal class MainWindow : Runnable
     private TextView ResultsView { get; set; }
     private StatusBar MainStatusBar { get; set; }
     private Shortcut ProcessingItem { get; set; }
+    private Shortcut ThemeItem { get; set; }
     private StatusBar VariableStatusBar { get; set; }
     private TableView? VariableTableView { get; set; }
     private ListView? VariableSetListView { get; set; }
@@ -106,6 +108,7 @@ internal class MainWindow : Runnable
         RightPane.Add(ResultsView);
 
         ProcessingItem = new Shortcut(Key.Empty, "", null) { BindKeyToApplication = false };
+        ThemeItem = new Shortcut(Key.T.WithCtrl, $"Theme: {ThemeManager.GetCurrentThemeName()}", PickTheme) { BindKeyToApplication = true };
         SelectedVariableSet = new Shortcut(Key.X.WithCtrl, "", SwitchVariableSet) { BindKeyToApplication = true };
 
         MainStatusBar = new StatusBar();
@@ -115,12 +118,14 @@ internal class MainWindow : Runnable
             new Shortcut(Key.C.WithCtrl, "Copy Result", CopyResultToClipboard) { BindKeyToApplication = true },
             new Shortcut(Key.Tab.WithCtrl, "Switch Bloops", CycleConfigs) { BindKeyToApplication = true },
             SelectedVariableSet,
+            ThemeItem,
             ProcessingItem
         );
 
         VariableStatusBar = new StatusBar();
         VariableStatusBar.Add(
-            new Shortcut(Key.Q.WithCtrl, "Back", SwitchToMainView) { BindKeyToApplication = true }
+            new Shortcut(Key.Q.WithCtrl, "Back", SwitchToMainView) { BindKeyToApplication = true },
+            new Shortcut(Key.T.WithCtrl, "Theme", PickTheme) { BindKeyToApplication = true }
         );
 
         _scratchVariables.Columns.Add("Name", typeof(string));
@@ -400,5 +405,78 @@ internal class MainWindow : Runnable
         var index = _configs.IndexOf(_selectedConfig) + 1;
         var newConfig = _configs[index >= _configs.Count ? 0 : index];
         SelectConfig(newConfig);
+    }
+
+    private void PickTheme()
+    {
+        var themeNames = ThemeManager.GetThemeNames().ToList();
+        var originalTheme = ThemeManager.GetCurrentThemeName();
+        var currentIndex = Math.Max(0, themeNames.IndexOf(originalTheme));
+
+        var themeListView = new ListView
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Fill(1),
+        };
+        themeListView.SetSource(new ObservableCollection<string>(themeNames));
+        themeListView.SetSelection(currentIndex, false);
+
+        themeListView.ValueChanged += (_, e) =>
+        {
+            if (e.NewValue.HasValue && e.NewValue.Value < themeNames.Count)
+            {
+                ThemeManager.Theme = themeNames[e.NewValue.Value];
+                ConfigurationManager.Apply();
+            }
+        };
+
+        var confirmed = false;
+
+        var ok = new Button { Text = "Apply", IsDefault = true };
+        ok.Accepted += (_, _) => { confirmed = true; App!.RequestStop(); };
+        var cancel = new Button { Text = "Cancel" };
+        cancel.Accepted += (_, _) => { App!.RequestStop(); };
+
+        var dialog = new Dialog { Title = "Select Theme" };
+        dialog.AddButton(ok);
+        dialog.AddButton(cancel);
+        dialog.Add(themeListView);
+        themeListView.HasFocus = true;
+
+        App!.Run(dialog);
+        dialog.Dispose();
+
+        if (confirmed && themeListView.SelectedItem.HasValue)
+        {
+            var selected = themeNames[themeListView.SelectedItem.Value];
+            SaveThemePreference(selected);
+        }
+        else
+        {
+            ThemeManager.Theme = originalTheme;
+            ConfigurationManager.Apply();
+        }
+
+        RefreshThemeDisplay();
+        SetNeedsDraw();
+    }
+
+    private static void SaveThemePreference(string themeName)
+    {
+        var tuiDir = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".tui");
+        Directory.CreateDirectory(tuiDir);
+        var configPath = Path.Combine(tuiDir, "bloop.config.json");
+        File.WriteAllText(configPath, JsonSerializer.Serialize(
+            new { Theme = themeName },
+            new JsonSerializerOptions { WriteIndented = true }));
+    }
+
+    private void RefreshThemeDisplay()
+    {
+        ThemeItem.Title = $"Theme: {ThemeManager.GetCurrentThemeName()}";
+        MainStatusBar.SetNeedsDraw();
     }
 }
