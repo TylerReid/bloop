@@ -8,6 +8,10 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Terminal.Gui.App;
 using Terminal.Gui.Configuration;
+using Terminal.Gui.Document;
+using Terminal.Gui.Drawing;
+using Terminal.Gui.Editor;
+using Terminal.Gui.Highlighting;
 using Terminal.Gui.Views;
 using Terminal.Gui.ViewBase;
 using Terminal.Gui.Input;
@@ -25,15 +29,22 @@ internal class MainWindow : Runnable
     private FrameView LeftPane { get; set; }
     private ListView RequestListView { get; set; }
     private FrameView RightPane { get; set; }
-    private TextView ResultDetails { get; set; }
-    private TextView ResultsView { get; set; }
+    private MenuBar ResultsMenuBar { get; set; }
+    private Editor ResultDetails { get; set; }
+    private Editor ResultsView { get; set; }
     private StatusBar MainStatusBar { get; set; }
     private Shortcut ProcessingItem { get; set; }
     private Shortcut ThemeItem { get; set; }
     private StatusBar VariableStatusBar { get; set; }
+    private StatusBar ThemeStatusBar { get; set; }
     private TableView? VariableTableView { get; set; }
     private ListView? VariableSetListView { get; set; }
+    private ListView? ThemeListView { get; set; }
     private Shortcut SelectedVariableSet { get; set; }
+    private string _themeOriginalName = "";
+    
+    // #002663 amex blue
+    // #5fbb70 kabbage green
 
     public MainWindow()
     {
@@ -47,17 +58,19 @@ internal class MainWindow : Runnable
             Title = "Requests",
             X = 0,
             Y = 0,
-            Width = Dim.Percent(25),
+            Width = Dim.Fill(Dim.Func(_ => RightPane!.Frame.Width)),
             Height = Dim.Fill(1),
             CanFocus = true,
         };
         RightPane = new FrameView
         {
             Title = "Results",
-            X = Pos.Right(LeftPane),
+            X = Pos.Percent(25),
             Y = 0,
             Width = Dim.Fill(),
             Height = Dim.Fill(1),
+            Arrangement = ViewArrangement.LeftResizable,
+            SuperViewRendersLineCanvas = true,
             CanFocus = true,
         };
 
@@ -74,11 +87,29 @@ internal class MainWindow : Runnable
         RequestListView.MouseEvent += RequestListMouseEvent;
 
         LeftPane.Add(RequestListView);
+        
+        ResultsMenuBar = new MenuBar
+        ([
+            new MenuBarItem("File", [
+                //new MenuItem("Save Result", Key.Empty, SaveResultToFile),
+            ]),
+            new MenuBarItem("Edit", [
+                new MenuItem("Copy Result", Key.Empty, CopyResultToClipboard),
+            ]),
+        ]);
 
-        ResultDetails = new TextView
+        var menuLine = new Line
         {
             X = 0,
-            Y = 0,
+            Y = Pos.Bottom(ResultsMenuBar),
+            Width = Dim.Fill(),
+            Orientation = Orientation.Horizontal,
+        };
+
+        ResultDetails = new Editor
+        {
+            X = 0,
+            Y = Pos.Bottom(menuLine),
             Width = Dim.Fill(),
             Height = Dim.Percent(10),
             CanFocus = true,
@@ -93,7 +124,7 @@ internal class MainWindow : Runnable
             Orientation = Orientation.Horizontal,
         };
 
-        ResultsView = new TextView
+        ResultsView = new Editor
         {
             X = 0,
             Y = Pos.Bottom(line),
@@ -101,21 +132,26 @@ internal class MainWindow : Runnable
             Height = Dim.Fill(),
             CanFocus = true,
             ReadOnly = true,
+            ViewportSettings = ViewportSettingsFlags.HasScrollBars,
+            GutterOptions = GutterOptions.None,
         };
 
+        RightPane.Add(ResultsMenuBar);
+        RightPane.Add(menuLine);
         RightPane.Add(ResultDetails);
         RightPane.Add(line);
         RightPane.Add(ResultsView);
 
         ProcessingItem = new Shortcut(Key.Empty, "", null) { BindKeyToApplication = false };
-        ThemeItem = new Shortcut(Key.T.WithCtrl, $"Theme: {ThemeManager.GetCurrentThemeName()}", PickTheme) { BindKeyToApplication = true };
+        ThemeItem = new Shortcut(Key.T.WithCtrl, $"Theme: {ThemeManager.GetCurrentThemeName()}", SwitchToThemeView) { BindKeyToApplication = true };
         SelectedVariableSet = new Shortcut(Key.X.WithCtrl, "", SwitchVariableSet) { BindKeyToApplication = true };
-
+        
         MainStatusBar = new StatusBar();
+        MainStatusBar.SchemeName = "Base";
         MainStatusBar.Add(
             new Shortcut(Key.Q.WithCtrl, "Quit", () => App!.RequestStop()) { BindKeyToApplication = true },
             new Shortcut(Key.V.WithAlt, "Variables", SwitchToVariableView) { BindKeyToApplication = true },
-            new Shortcut(Key.C.WithCtrl, "Copy Result", CopyResultToClipboard) { BindKeyToApplication = true },
+            //new Shortcut(Key.C.WithCtrl, "Copy Result", CopyResultToClipboard) { BindKeyToApplication = true },
             new Shortcut(Key.Tab.WithCtrl, "Switch Bloops", CycleConfigs) { BindKeyToApplication = true },
             SelectedVariableSet,
             ThemeItem,
@@ -124,8 +160,13 @@ internal class MainWindow : Runnable
 
         VariableStatusBar = new StatusBar();
         VariableStatusBar.Add(
-            new Shortcut(Key.Q.WithCtrl, "Back", SwitchToMainView) { BindKeyToApplication = true },
-            new Shortcut(Key.T.WithCtrl, "Theme", PickTheme) { BindKeyToApplication = true }
+            new Shortcut(Key.Q.WithCtrl, "Back", SwitchToMainView) { BindKeyToApplication = true }
+        );
+
+        ThemeStatusBar = new StatusBar();
+        ThemeStatusBar.Add(
+            new Shortcut(Key.Enter, "Apply", ApplyThemeAndReturn) { BindKeyToApplication = true },
+            new Shortcut(Key.Q.WithCtrl, "Cancel", CancelThemeAndReturn) { BindKeyToApplication = true }
         );
 
         _scratchVariables.Columns.Add("Name", typeof(string));
@@ -139,9 +180,9 @@ internal class MainWindow : Runnable
 
     private void CopyResultToClipboard()
     {
-        if (ResultsView.Text != null)
+        if (ResultsView.Document?.Text != null)
         {
-            App!.Clipboard?.TrySetClipboardData(ResultsView.Text);
+            App!.Clipboard?.TrySetClipboardData(ResultsView.Document.Text);
         }
     }
 
@@ -272,16 +313,14 @@ internal class MainWindow : Runnable
     {
         if (col != 1) { return; }
         var oldValue = _scratchVariables.Rows[row][col] as string;
-        var okPressed = false;
 
         var ok = new Button { Text = "Ok", IsDefault = true };
-        ok.Accepted += (_, _) => { okPressed = true; App!.RequestStop(); };
         var cancel = new Button { Text = "Cancel" };
-        cancel.Accepted += (_, _) => { App!.RequestStop(); };
 
         var dialog = new Dialog { Title = "Enter a value" };
-        dialog.AddButton(ok);
+        dialog.Width = Dim.Auto(minimumContentDim: Dim.Percent(50));
         dialog.AddButton(cancel);
+        dialog.AddButton(ok);
 
         var label = new Label
         {
@@ -302,7 +341,7 @@ internal class MainWindow : Runnable
         App!.Run(dialog);
         dialog.Dispose();
 
-        if (okPressed)
+        if (dialog.Result == 1)
         {
             var newValue = textField.Text;
             _scratchVariables.Rows[row][col] = newValue as object ?? DBNull.Value;
@@ -331,12 +370,20 @@ internal class MainWindow : Runnable
     private async Task SendSelectedRequest()
     {
         if (_selectedConfig == null || _selectedRequest == null) { return; }
-
-        ProcessingItem.Title = ResultsView.Text = "Sending bloop";
+        
+        ProcessingItem.Title = "Sending bloop";
+        ResultsView.Document = new TextDocument("");
 
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         var result = await _blooper.SendRequest(_selectedConfig, _selectedRequest);
+        
+        string detailsText = "";
+        string responseText = "";
+        bool isJson = false;
+        bool isXml = false;
+        bool hasError = false;
+
         await result.MatchAsync(async response =>
         {
             var sb = new StringBuilder();
@@ -346,31 +393,57 @@ internal class MainWindow : Runnable
             {
                 sb.AppendLine($"{k}: {v.Aggregate((a, b) => $"{a},{b}")}");
             }
+            detailsText = sb.ToString();
 
-            ResultDetails.Text = sb.ToString();
-
-            if (response.Content.Headers.ContentType?.MediaType == "application/json")
+            var mediaType = response.Content.Headers.ContentType?.MediaType ?? "";
+            if (mediaType.Contains("json"))
             {
+                isJson = true;
                 var parsedJson = JsonNode.Parse(await response.Content!.ReadAsStreamAsync());
-                var json = parsedJson!.ToJsonString(options: new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                });
-                ResultsView.Text = json;
+                responseText = parsedJson!.ToJsonString(options: new JsonSerializerOptions { WriteIndented = true });
+            }
+            else if (mediaType.Contains("xml"))
+            {
+                isXml = true;
+                responseText = await response.Content.ReadAsStringAsync();
             }
             else
             {
-                ResultsView.Text = await response.Content.ReadAsStringAsync();
+                responseText = await response.Content.ReadAsStringAsync();
             }
         },
         error =>
         {
-            ResultDetails.Text = "Something bad happened!";
-            ResultsView.Text = error.Message;
+            hasError = true;
+            detailsText = "Something bad happened!";
+            responseText = error.Message;
             return Task.CompletedTask;
         });
+
         stopwatch.Stop();
-        ProcessingItem.Title = $"Response Time: {stopwatch.Elapsed}";
+        var elapsed = stopwatch.Elapsed;
+        
+        App!.Invoke(() =>
+        {
+            ResultDetails.Document = new TextDocument(detailsText);
+            ResultsView.GutterOptions = GutterOptions.LineNumbers | GutterOptions.Folding;
+            if (hasError || (!isJson && !isXml))
+            {
+                ResultsView.HighlightingDefinition = null;
+                ResultsView.Document = new TextDocument(responseText);
+            }
+            else if (isJson)
+            {
+                ResultsView.HighlightingDefinition = HighlightingManager.Instance.GetDefinitionByExtension(".json");
+                ResultsView.Document = new TextDocument(responseText);
+            }
+            else
+            {
+                ResultsView.HighlightingDefinition = HighlightingManager.Instance.GetDefinitionByExtension(".xml");
+                ResultsView.Document = new TextDocument(responseText);
+            }
+            ProcessingItem.Title = $"Response Time: {elapsed}";
+        });
     }
 
     private void RequestSelectionChanged(object? sender, ValueChangedEventArgs<int?> args)
@@ -407,60 +480,72 @@ internal class MainWindow : Runnable
         SelectConfig(newConfig);
     }
 
-    private void PickTheme()
+    private void SwitchToThemeView()
     {
+        _themeOriginalName = ThemeManager.GetCurrentThemeName();
         var themeNames = ThemeManager.GetThemeNames().ToList();
-        var originalTheme = ThemeManager.GetCurrentThemeName();
-        var currentIndex = Math.Max(0, themeNames.IndexOf(originalTheme));
+        var currentIndex = Math.Max(0, themeNames.IndexOf(_themeOriginalName));
 
-        var themeListView = new ListView
+        RemoveAll();
+
+        var frame = new FrameView
         {
+            Title = "Select Theme",
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
             Height = Dim.Fill(1),
+            CanFocus = true,
         };
-        themeListView.SetSource(new ObservableCollection<string>(themeNames));
-        themeListView.SetSelection(currentIndex, false);
 
-        themeListView.ValueChanged += (_, e) =>
+        ThemeListView = new ListView
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            Height = Dim.Fill(),
+        };
+        ThemeListView.SetSource(new ObservableCollection<string>(themeNames));
+        ThemeListView.SetSelection(currentIndex, false);
+
+        ThemeListView.ValueChanged += (_, e) =>
         {
             if (e.NewValue.HasValue && e.NewValue.Value < themeNames.Count)
             {
                 ThemeManager.Theme = themeNames[e.NewValue.Value];
                 ConfigurationManager.Apply();
+                SetNeedsDraw();
             }
         };
 
-        var confirmed = false;
+        frame.Add(ThemeListView);
+        Add(frame);
+        Add(ThemeStatusBar);
+        ThemeListView.HasFocus = true;
+    }
 
-        var ok = new Button { Text = "Apply", IsDefault = true };
-        ok.Accepted += (_, _) => { confirmed = true; App!.RequestStop(); };
-        var cancel = new Button { Text = "Cancel" };
-        cancel.Accepted += (_, _) => { App!.RequestStop(); };
-
-        var dialog = new Dialog { Title = "Select Theme" };
-        dialog.AddButton(ok);
-        dialog.AddButton(cancel);
-        dialog.Add(themeListView);
-        themeListView.HasFocus = true;
-
-        App!.Run(dialog);
-        dialog.Dispose();
-
-        if (confirmed && themeListView.SelectedItem.HasValue)
+    private void ApplyThemeAndReturn()
+    {
+        if (ThemeListView?.SelectedItem.HasValue == true)
         {
-            var selected = themeNames[themeListView.SelectedItem.Value];
-            SaveThemePreference(selected);
+            var themeNames = ThemeManager.GetThemeNames().ToList();
+            if (ThemeListView.SelectedItem.Value < themeNames.Count)
+            {
+                SaveThemePreference(themeNames[ThemeListView.SelectedItem.Value]);
+            }
         }
-        else
-        {
-            ThemeManager.Theme = originalTheme;
-            ConfigurationManager.Apply();
-        }
-
+        ThemeListView = null;
+        SwitchToMainView();
         RefreshThemeDisplay();
-        SetNeedsDraw();
+    }
+
+    private void CancelThemeAndReturn()
+    {
+        ThemeManager.Theme = _themeOriginalName;
+        ConfigurationManager.Apply();
+        ThemeListView = null;
+        SwitchToMainView();
+        RefreshThemeDisplay();
     }
 
     private static void SaveThemePreference(string themeName)
