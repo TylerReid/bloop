@@ -41,6 +41,8 @@ internal class MainWindow : Runnable
     private ListView? VariableSetListView { get; set; }
     private ListView? ThemeListView { get; set; }
     private Shortcut SelectedVariableSet { get; set; }
+    private MenuItem SaveFile { get; set; }
+    private MenuItem CopyToClipboard { get; set; }
     private string _themeOriginalName = "";
     
     // #002663 amex blue
@@ -87,14 +89,19 @@ internal class MainWindow : Runnable
         RequestListView.MouseEvent += RequestListMouseEvent;
 
         LeftPane.Add(RequestListView);
+
+        SaveFile = new MenuItem("Save Result", Key.Empty, SaveResultToFile);
+        SaveFile.Enabled = false;
+        CopyToClipboard = new MenuItem("Copy Result", Key.Empty, CopyResultToClipboard);
+        CopyToClipboard.Enabled = false;
         
         ResultsMenuBar = new MenuBar
         ([
             new MenuBarItem("File", [
-                //new MenuItem("Save Result", Key.Empty, SaveResultToFile),
+                SaveFile,
             ]),
             new MenuBarItem("Edit", [
-                new MenuItem("Copy Result", Key.Empty, CopyResultToClipboard),
+                CopyToClipboard,
             ]),
         ]);
 
@@ -146,24 +153,32 @@ internal class MainWindow : Runnable
         ThemeItem = new Shortcut(Key.T.WithCtrl, $"Theme: {ThemeManager.GetCurrentThemeName()}", SwitchToThemeView) { BindKeyToApplication = true };
         SelectedVariableSet = new Shortcut(Key.X.WithCtrl, "", SwitchVariableSet) { BindKeyToApplication = true };
         
-        MainStatusBar = new StatusBar();
-        MainStatusBar.SchemeName = "Base";
+        MainStatusBar = new StatusBar
+        {
+            SchemeName = "Base",
+        };
         MainStatusBar.Add(
             new Shortcut(Key.Q.WithCtrl, "Quit", () => App!.RequestStop()) { BindKeyToApplication = true },
             new Shortcut(Key.V.WithAlt, "Variables", SwitchToVariableView) { BindKeyToApplication = true },
-            //new Shortcut(Key.C.WithCtrl, "Copy Result", CopyResultToClipboard) { BindKeyToApplication = true },
             new Shortcut(Key.Tab.WithCtrl, "Switch Bloops", CycleConfigs) { BindKeyToApplication = true },
             SelectedVariableSet,
+            new Shortcut(Key.R.WithCtrl, "Reload", () => _ = LoadAsync()) { BindKeyToApplication = true },
             ThemeItem,
             ProcessingItem
         );
 
-        VariableStatusBar = new StatusBar();
+        VariableStatusBar = new StatusBar
+        {
+            SchemeName = "Base",
+        };
         VariableStatusBar.Add(
             new Shortcut(Key.Q.WithCtrl, "Back", SwitchToMainView) { BindKeyToApplication = true }
         );
 
-        ThemeStatusBar = new StatusBar();
+        ThemeStatusBar = new StatusBar
+        {
+            SchemeName = "Base",
+        };
         ThemeStatusBar.Add(
             new Shortcut(Key.Enter, "Apply", ApplyThemeAndReturn) { BindKeyToApplication = true },
             new Shortcut(Key.Q.WithCtrl, "Cancel", CancelThemeAndReturn) { BindKeyToApplication = true }
@@ -176,6 +191,21 @@ internal class MainWindow : Runnable
         SwitchToMainView();
 
         _ = LoadAsync();
+    }
+
+    private void SaveResultToFile()
+    {
+        if (ResultsView.Document?.Text == null)
+        {
+            return;
+        }
+        var dialog = new SaveDialog();
+        dialog.Title = "Save Result";
+        App!.Run(dialog);
+        if (dialog.FileName != null)
+        {
+            File.WriteAllText(dialog.FileName, ResultsView.Document.Text);
+        }
     }
 
     private void CopyResultToClipboard()
@@ -442,6 +472,8 @@ internal class MainWindow : Runnable
                 ResultsView.HighlightingDefinition = HighlightingManager.Instance.GetDefinitionByExtension(".xml");
                 ResultsView.Document = new TextDocument(responseText);
             }
+            SaveFile.Enabled = !string.IsNullOrWhiteSpace(ResultsView.Document.Text);
+            CopyToClipboard.Enabled = !string.IsNullOrWhiteSpace(ResultsView.Document.Text);
             ProcessingItem.Title = $"Response Time: {elapsed}";
         });
     }

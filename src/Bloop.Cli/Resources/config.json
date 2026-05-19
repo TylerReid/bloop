@@ -58,11 +58,11 @@
           },
           {
             "Dialog": {
-              "Normal":    { "Foreground": "White",       "Background": "DarkGray"    },
+              "Normal":    { "Foreground": "White",       "Background": "#1e1e1e"    },
               "Focus":     { "Foreground": "Black",       "Background": "#5fbb70" },
-              "HotNormal": { "Foreground": "#5fbb70", "Background": "DarkGray"    },
-              "HotFocus":  { "Foreground": "Black",       "Background": "#5fbb70"       },
-              "Active":    { "Foreground": "White",       "Background": "Gray"        },
+              "HotNormal": { "Foreground": "#5fbb70", "Background": "#1e1e1e"    },
+              "HotFocus":  { "Foreground": "#5fbb70",       "Background": "#1e1e1e"       },
+              "Active":    { "Foreground": "White",       "Background": "#1e1e1e"        },
               "Disabled":  { "Foreground": "DarkGray",    "Background": "DarkGray"    }
             }
           },
@@ -72,38 +72,6 @@
               "Focus":     { "Foreground": "Black",       "Background": "BrightRed"   },
               "HotNormal": { "Foreground": "Yellow",      "Background": "Red"         },
               "HotFocus":  { "Foreground": "Black",       "Background": "BrightRed"   }
-            }
-          },
-          {
-            "StatusBar": {
-              "Normal": {
-                "Foreground": "Gainsboro",
-                "Background": "#1e1e1e"
-              },
-              "Focus": {
-                "Foreground": "White",
-                "Background": "#1e1e1e"
-              },
-              "HotNormal": {
-                "Foreground": "#5fbb70",
-                "Background": "#1e1e1e"
-              },
-              "HotFocus": {
-                "Foreground": "White",
-                "Background": "#1e1e1e"
-              },
-              "Active": {
-                "Foreground": "#5fbb70",
-                "Background": "#1e1e1e"
-              },
-              "Disabled": {
-                "Foreground": "DarkGray",
-                "Background": "#1e1e1e"
-              },
-              "Highlight": {
-                "Foreground": "Black",
-                "Background": "#5fbb70"
-              }
             }
           }
         ]
