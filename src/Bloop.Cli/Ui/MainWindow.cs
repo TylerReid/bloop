@@ -31,6 +31,7 @@ internal class MainWindow : Runnable
     private FrameView RightPane { get; set; }
     private MenuBar ResultsMenuBar { get; set; }
     private Editor ResultDetails { get; set; }
+    private View DetailsView { get; set; }
     private Editor ResultsView { get; set; }
     private StatusBar MainStatusBar { get; set; }
     private Shortcut ProcessingItem { get; set; }
@@ -43,6 +44,7 @@ internal class MainWindow : Runnable
     private Shortcut SelectedVariableSet { get; set; }
     private MenuItem SaveFile { get; set; }
     private MenuItem CopyToClipboard { get; set; }
+    private ProgressBar RequestSpinner { get; set; }
     private string _themeOriginalName = "";
     
     // #002663 amex blue
@@ -116,17 +118,27 @@ internal class MainWindow : Runnable
         ResultDetails = new Editor
         {
             X = 0,
-            Y = Pos.Bottom(menuLine),
+            Y = 0,
             Width = Dim.Fill(),
-            Height = Dim.Percent(10),
+            Height = Dim.Fill(),
             CanFocus = true,
             ReadOnly = true,
         };
+        
+        DetailsView = new View()
+        {
+            X = 0,
+            Y = Pos.Bottom(menuLine),
+            Width = Dim.Fill(),
+            Height = Dim.Percent(10),
+        };
+        
+        DetailsView.Add(ResultDetails);
 
         var line = new Line
         {
             X = 0,
-            Y = Pos.Bottom(ResultDetails),
+            Y = Pos.Bottom(DetailsView),
             Width = Dim.Fill(),
             Orientation = Orientation.Horizontal,
         };
@@ -145,7 +157,7 @@ internal class MainWindow : Runnable
 
         RightPane.Add(ResultsMenuBar);
         RightPane.Add(menuLine);
-        RightPane.Add(ResultDetails);
+        RightPane.Add(DetailsView);
         RightPane.Add(line);
         RightPane.Add(ResultsView);
 
@@ -186,6 +198,16 @@ internal class MainWindow : Runnable
 
         _scratchVariables.Columns.Add("Name", typeof(string));
         _scratchVariables.Columns.Add("Value", typeof(string));
+
+        RequestSpinner = new ProgressBar
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            ProgressBarStyle = ProgressBarStyle.MarqueeContinuous,
+        };
+
+        ActivityPulsar.ActivityStarted += (_, _) => App!.Invoke(_ => RequestSpinner.Pulse());
 
         RefreshSelectedEnvDisplay();
         SwitchToMainView();
@@ -401,8 +423,14 @@ internal class MainWindow : Runnable
     {
         if (_selectedConfig == null || _selectedRequest == null) { return; }
         
-        ProcessingItem.Title = "Sending bloop";
-        ResultsView.Document = new TextDocument("");
+        App!.Invoke(_ =>
+        {
+            ProcessingItem.Title = "Sending bloop";
+            RequestSpinner.Fraction = 0;
+            DetailsView.RemoveAll();
+            DetailsView.Add(RequestSpinner);
+            ResultsView.Document = new TextDocument("");
+        });
 
         var stopwatch = new Stopwatch();
         stopwatch.Start();
@@ -455,6 +483,8 @@ internal class MainWindow : Runnable
         
         App!.Invoke(() =>
         {
+            DetailsView.RemoveAll();
+            DetailsView.Add(ResultDetails);
             ResultDetails.Document = new TextDocument(detailsText);
             ResultsView.GutterOptions = GutterOptions.LineNumbers | GutterOptions.Folding;
             if (hasError || (!isJson && !isXml))

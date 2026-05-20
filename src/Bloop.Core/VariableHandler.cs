@@ -45,6 +45,7 @@ public partial class VariableHandler
 
     public static async Task<Either<Unit, Error>> SatisfyVariables(Blooper blooper, Config config, Request request)
     {
+        ActivityPulsar.Pulse();
         // todo make this not dumb.
         // probably need to create a dependency graph of the variables and requests and verify there are no cycles
         // then we can satisfy them in a reasonable order
@@ -68,6 +69,7 @@ public partial class VariableHandler
 
     public static async Task<Error?> SatisfyVariable(Blooper blooper, Config config, string sourceName, Variable variable)
     {
+        ActivityPulsar.Pulse();
         variable.ClearIfExpired();
 
         if (config.Env != variable.SatisfiedEnv)
@@ -140,6 +142,7 @@ public partial class VariableHandler
 
         if (variable.File != null)
         {
+            ActivityPulsar.Pulse();
             try
             {
                 var path = Path.GetFullPath(variable.File, config.Directory);
@@ -167,6 +170,7 @@ public partial class VariableHandler
 
     private static async Task<Either<string, Error>> RunCommand(Variable variable, Config config)
     {
+        ActivityPulsar.Pulse();
         if (variable.Command == null)
         {
             return new Error("variable command was unexpectedly null");

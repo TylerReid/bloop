@@ -80,14 +80,16 @@ public class Blooper
         HttpResponseMessage response;
         try
         {
+            ActivityPulsar.Pulse();
             response = await _client.SendAsync(httpRequest);
+            ActivityPulsar.Pulse();
         }
         catch (Exception ex)
         {
             return new Error(ex.Message);
         }
         var content = await response.Content.ReadAsStringAsync();
-
+        ActivityPulsar.Pulse();
         if (response.IsSuccessStatusCode)
         {
             var variables = config.Variables.Where(x => x.Source == request.Name);
