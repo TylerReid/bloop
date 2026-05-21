@@ -1,7 +1,6 @@
 ﻿using Bloop.Core;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Data;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
@@ -24,7 +23,6 @@ internal class MainWindow : Runnable
     private Config? _selectedConfig;
     private Request? _selectedRequest;
     private readonly Blooper _blooper = new();
-    private readonly DataTable _scratchVariables = new();
 
     private FrameView LeftPane { get; set; }
     private ListView RequestListView { get; set; }
@@ -36,9 +34,7 @@ internal class MainWindow : Runnable
     private StatusBar MainStatusBar { get; set; }
     private Shortcut ProcessingItem { get; set; }
     private Shortcut ThemeItem { get; set; }
-    private StatusBar VariableStatusBar { get; set; }
     private StatusBar ThemeStatusBar { get; set; }
-    private TableView? VariableTableView { get; set; }
     private ListView? VariableSetListView { get; set; }
     private ListView? ThemeListView { get; set; }
     private Shortcut SelectedVariableSet { get; set; }
@@ -179,14 +175,6 @@ internal class MainWindow : Runnable
             ProcessingItem
         );
 
-        VariableStatusBar = new StatusBar
-        {
-            SchemeName = "Base",
-        };
-        VariableStatusBar.Add(
-            new Shortcut(Key.Q.WithCtrl, "Back", SwitchToMainView) { BindKeyToApplication = true }
-        );
-
         ThemeStatusBar = new StatusBar
         {
             SchemeName = "Base",
@@ -195,9 +183,6 @@ internal class MainWindow : Runnable
             new Shortcut(Key.Enter, "Apply", ApplyThemeAndReturn) { BindKeyToApplication = true },
             new Shortcut(Key.Q.WithCtrl, "Cancel", CancelThemeAndReturn) { BindKeyToApplication = true }
         );
-
-        _scratchVariables.Columns.Add("Name", typeof(string));
-        _scratchVariables.Columns.Add("Value", typeof(string));
 
         RequestSpinner = new ProgressBar
         {
@@ -240,14 +225,6 @@ internal class MainWindow : Runnable
 
     private void SwitchToMainView()
     {
-        foreach (DataRow row in _scratchVariables.Rows)
-        {
-            var variable = _selectedConfig!.Variables
-                .First(x => x.Name == (string)row["Name"]);
-            variable.Value = row["Value"] as string;
-            variable.SatisfiedEnv = _selectedConfig.Env;
-        }
-        _scratchVariables.Clear();
         RemoveAll();
         Add(LeftPane);
         Add(RightPane);
@@ -257,41 +234,9 @@ internal class MainWindow : Runnable
     private void SwitchToVariableView()
     {
         if (_selectedConfig == null) { return; }
-        RemoveAll();
-
-        var frame = new FrameView
-        {
-            Title = "Variables",
-            X = 0,
-            Y = 0,
-            Width = Dim.Fill(),
-            Height = Dim.Fill(1),
-            CanFocus = true,
-        };
-
-        foreach (var variable in _selectedConfig.Variables)
-        {
-            _scratchVariables.Rows.Add(variable.Name, variable.Value);
-        }
-
-        VariableTableView = new TableView
-        {
-            X = 0,
-            Y = 0,
-            Width = Dim.Fill(),
-            Height = Dim.Fill(),
-            Table = new DataTableSource(_scratchVariables),
-        };
-
-        VariableTableView.Accepted += (_, _) =>
-        {
-            var cell = VariableTableView.Value!.SelectedCell;
-            EditCurrentCell(cell.X, cell.Y);
-        };
-
-        frame.Add(VariableTableView);
-        Add(frame);
-        Add(VariableStatusBar);
+        var variableView = new VariableView(_selectedConfig);
+        App!.Run(variableView);
+        variableView.Dispose();
     }
 
     private void SwitchVariableSet()
@@ -359,46 +304,6 @@ internal class MainWindow : Runnable
     {
         SelectedVariableSet.Title = $"Set: {_selectedConfig?.Env ?? "None"}";
         MainStatusBar.SetNeedsDraw();
-    }
-
-    private void EditCurrentCell(int col, int row)
-    {
-        if (col != 1) { return; }
-        var oldValue = _scratchVariables.Rows[row][col] as string;
-
-        var ok = new Button { Text = "Ok", IsDefault = true };
-        var cancel = new Button { Text = "Cancel" };
-
-        var dialog = new Dialog { Title = "Enter a value" };
-        dialog.Width = Dim.Auto(minimumContentDim: Dim.Percent(50));
-        dialog.AddButton(cancel);
-        dialog.AddButton(ok);
-
-        var label = new Label
-        {
-            X = 0,
-            Y = 1,
-            Text = _scratchVariables.Rows[row][0]?.ToString() ?? string.Empty,
-        };
-        var textField = new TextField
-        {
-            Text = oldValue ?? "",
-            X = 0,
-            Y = 2,
-            Width = Dim.Fill(),
-        };
-
-        dialog.Add(label, textField);
-        textField.HasFocus = true;
-        App!.Run(dialog);
-        dialog.Dispose();
-
-        if (dialog.Result == 1)
-        {
-            var newValue = textField.Text;
-            _scratchVariables.Rows[row][col] = newValue as object ?? DBNull.Value;
-            VariableTableView?.SetNeedsDraw();
-        }
     }
 
     private void RequestListKeyDown(object? sender, Key args)
