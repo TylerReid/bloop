@@ -1,14 +1,13 @@
 ﻿using Bloop.Core;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Net.Http.Handlers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Terminal.Gui.App;
 using Terminal.Gui.Configuration;
 using Terminal.Gui.Document;
-using Terminal.Gui.Drawing;
 using Terminal.Gui.Editor;
 using Terminal.Gui.Highlighting;
 using Terminal.Gui.Views;
@@ -22,7 +21,7 @@ internal class MainWindow : Runnable
     private List<Config> _configs = new();
     private Config? _selectedConfig;
     private Request? _selectedRequest;
-    private readonly Blooper _blooper = new();
+    private readonly Blooper _blooper;
 
     private FrameView LeftPane { get; set; }
     private ListView RequestListView { get; set; }
@@ -34,20 +33,25 @@ internal class MainWindow : Runnable
     private StatusBar MainStatusBar { get; set; }
     private Shortcut ProcessingItem { get; set; }
     private Shortcut ThemeItem { get; set; }
-    private StatusBar ThemeStatusBar { get; set; }
     private ListView? VariableSetListView { get; set; }
-    private ListView? ThemeListView { get; set; }
     private Shortcut SelectedVariableSet { get; set; }
     private MenuItem SaveFile { get; set; }
     private MenuItem CopyToClipboard { get; set; }
     private ProgressBar RequestSpinner { get; set; }
-    private string _themeOriginalName = "";
     
     // #002663 amex blue
     // #5fbb70 kabbage green
 
     public MainWindow()
     {
+        var httpHandler = new ProgressMessageHandler
+        {
+            InnerHandler = new HttpClientHandler(),
+        };
+        httpHandler.HttpReceiveProgress += (_, _) => PulseSpinner();
+        httpHandler.HttpSendProgress += (_, _) => PulseSpinner();
+        _blooper =  new Blooper(new HttpClient(httpHandler));
+        
         X = 0;
         Y = 0;
         Width = Dim.Fill();
@@ -175,30 +179,30 @@ internal class MainWindow : Runnable
             ProcessingItem
         );
 
-        ThemeStatusBar = new StatusBar
-        {
-            SchemeName = "Base",
-        };
-        ThemeStatusBar.Add(
-            new Shortcut(Key.Enter, "Apply", ApplyThemeAndReturn) { BindKeyToApplication = true },
-            new Shortcut(Key.Q.WithCtrl, "Cancel", CancelThemeAndReturn) { BindKeyToApplication = true }
-        );
+        CreateRequestSpinner();
 
-        RequestSpinner = new ProgressBar
-        {
-            X = 0,
-            Y = 0,
-            Width = Dim.Fill(),
-            ProgressBarStyle = ProgressBarStyle.MarqueeContinuous,
-        };
-
-        ActivityPulsar.ActivityStarted += (_, _) => App!.Invoke(_ => RequestSpinner.Pulse());
+        ActivityPulsar.ActivityStarted += (_, _) => PulseSpinner();
 
         RefreshSelectedEnvDisplay();
         SwitchToMainView();
 
         _ = LoadAsync();
     }
+
+    private void CreateRequestSpinner()
+    {
+        RequestSpinner = new ProgressBar
+        {
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            ProgressBarStyle = ProgressBarStyle.MarqueeContinuous,
+            BidirectionalMarquee = false,
+            SyncWithTerminal = false,
+        };
+    }
+
+    private void PulseSpinner() => App!.Invoke(_ => RequestSpinner.Pulse());
 
     private void SaveResultToFile()
     {
@@ -331,7 +335,6 @@ internal class MainWindow : Runnable
         App!.Invoke(_ =>
         {
             ProcessingItem.Title = "Sending bloop";
-            RequestSpinner.Fraction = 0;
             DetailsView.RemoveAll();
             DetailsView.Add(RequestSpinner);
             ResultsView.Document = new TextDocument("");
@@ -341,11 +344,11 @@ internal class MainWindow : Runnable
         stopwatch.Start();
         var result = await _blooper.SendRequest(_selectedConfig, _selectedRequest);
         
-        string detailsText = "";
-        string responseText = "";
-        bool isJson = false;
-        bool isXml = false;
-        bool hasError = false;
+        var detailsText = "";
+        var responseText = "";
+        var isJson = false;
+        var isXml = false;
+        var hasError = false;
 
         await result.MatchAsync(async response =>
         {
@@ -389,6 +392,7 @@ internal class MainWindow : Runnable
         App!.Invoke(() =>
         {
             DetailsView.RemoveAll();
+            CreateRequestSpinner();
             DetailsView.Add(ResultDetails);
             ResultDetails.Document = new TextDocument(detailsText);
             ResultsView.GutterOptions = GutterOptions.LineNumbers | GutterOptions.Folding;
@@ -449,85 +453,8 @@ internal class MainWindow : Runnable
 
     private void SwitchToThemeView()
     {
-        _themeOriginalName = ThemeManager.GetCurrentThemeName();
-        var themeNames = ThemeManager.GetThemeNames().ToList();
-        var currentIndex = Math.Max(0, themeNames.IndexOf(_themeOriginalName));
-
-        RemoveAll();
-
-        var frame = new FrameView
-        {
-            Title = "Select Theme",
-            X = 0,
-            Y = 0,
-            Width = Dim.Fill(),
-            Height = Dim.Fill(1),
-            CanFocus = true,
-        };
-
-        ThemeListView = new ListView
-        {
-            X = 0,
-            Y = 0,
-            Width = Dim.Fill(),
-            Height = Dim.Fill(),
-        };
-        ThemeListView.SetSource(new ObservableCollection<string>(themeNames));
-        ThemeListView.SetSelection(currentIndex, false);
-
-        ThemeListView.ValueChanged += (_, e) =>
-        {
-            if (e.NewValue.HasValue && e.NewValue.Value < themeNames.Count)
-            {
-                ThemeManager.Theme = themeNames[e.NewValue.Value];
-                ConfigurationManager.Apply();
-                SetNeedsDraw();
-            }
-        };
-
-        frame.Add(ThemeListView);
-        Add(frame);
-        Add(ThemeStatusBar);
-        ThemeListView.HasFocus = true;
-    }
-
-    private void ApplyThemeAndReturn()
-    {
-        if (ThemeListView?.SelectedItem.HasValue == true)
-        {
-            var themeNames = ThemeManager.GetThemeNames().ToList();
-            if (ThemeListView.SelectedItem.Value < themeNames.Count)
-            {
-                SaveThemePreference(themeNames[ThemeListView.SelectedItem.Value]);
-            }
-        }
-        ThemeListView = null;
-        SwitchToMainView();
-        RefreshThemeDisplay();
-    }
-
-    private void CancelThemeAndReturn()
-    {
-        ThemeManager.Theme = _themeOriginalName;
-        ConfigurationManager.Apply();
-        ThemeListView = null;
-        SwitchToMainView();
-        RefreshThemeDisplay();
-    }
-
-    private static void SaveThemePreference(string themeName)
-    {
-        var tuiDir = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".tui");
-        Directory.CreateDirectory(tuiDir);
-        var configPath = Path.Combine(tuiDir, "bloop.config.json");
-        File.WriteAllText(configPath, JsonSerializer.Serialize(
-            new { Theme = themeName },
-            new JsonSerializerOptions { WriteIndented = true }));
-    }
-
-    private void RefreshThemeDisplay()
-    {
+        using var themeView = new ThemeView();
+        App!.Run(themeView);
         ThemeItem.Title = $"Theme: {ThemeManager.GetCurrentThemeName()}";
         MainStatusBar.SetNeedsDraw();
     }
