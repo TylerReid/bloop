@@ -162,7 +162,7 @@ internal class MainWindow : Runnable
         RightPane.Add(ResultsView);
 
         ProcessingItem = new Shortcut(Key.Empty, "", null) { BindKeyToApplication = false };
-        ThemeItem = new Shortcut(Key.T.WithCtrl, $"Theme: {ThemeManager.GetCurrentThemeName()}", SwitchToThemeView) { BindKeyToApplication = true };
+        ThemeItem = new Shortcut(Key.T.WithCtrl, $"Theme", SwitchToThemeView) { BindKeyToApplication = true };
         SelectedVariableSet = new Shortcut(Key.X.WithCtrl, "", SwitchVariableSet) { BindKeyToApplication = true };
         
         MainStatusBar = new StatusBar
@@ -176,15 +176,17 @@ internal class MainWindow : Runnable
             SelectedVariableSet,
             new Shortcut(Key.R.WithCtrl, "Reload", () => _ = LoadAsync()) { BindKeyToApplication = true },
             ThemeItem,
+            new Shortcut(Key.E.WithCtrl, "ScratchPad", SwitchToScratchPadView) { BindKeyToApplication = true },
             ProcessingItem
         );
 
         CreateRequestSpinner();
-
         ActivityPulsar.ActivityStarted += (_, _) => PulseSpinner();
 
         RefreshSelectedEnvDisplay();
-        SwitchToMainView();
+        Add(LeftPane);
+        Add(RightPane);
+        Add(MainStatusBar);
 
         _ = LoadAsync();
     }
@@ -225,14 +227,6 @@ internal class MainWindow : Runnable
         {
             App!.Clipboard?.TrySetClipboardData(ResultsView.Document.Text);
         }
-    }
-
-    private void SwitchToMainView()
-    {
-        RemoveAll();
-        Add(LeftPane);
-        Add(RightPane);
-        Add(MainStatusBar);
     }
 
     private void SwitchToVariableView()
@@ -457,5 +451,16 @@ internal class MainWindow : Runnable
         App!.Run(themeView);
         ThemeItem.Title = $"Theme: {ThemeManager.GetCurrentThemeName()}";
         MainStatusBar.SetNeedsDraw();
+    }
+
+    private void SwitchToScratchPadView()
+    {
+        if (_selectedConfig == null || _selectedRequest == null)
+        {
+            return;
+        }
+        
+        using var scratchPad = new ScratchPadView(_blooper, _selectedConfig, _selectedRequest);
+        App!.Run(scratchPad);
     }
 }
