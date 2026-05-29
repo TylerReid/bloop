@@ -8,5 +8,7 @@ jobs:
     steps:
       - name: Checkout Project
         uses: actions/checkout@v4
+      - name: run unit tests
+        run: dotnet test
       - name: run integration tests
         run: ./tests/IntegrationTests/runTests.ps1
