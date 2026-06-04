@@ -33,7 +33,6 @@ internal class MainWindow : Runnable
     private StatusBar MainStatusBar { get; set; }
     private Shortcut ProcessingItem { get; set; }
     private Shortcut ThemeItem { get; set; }
-    private ListView? VariableSetListView { get; set; }
     private Shortcut SelectedVariableSet { get; set; }
     private MenuItem SaveFile { get; set; }
     private MenuItem CopyToClipboard { get; set; }
@@ -247,54 +246,56 @@ internal class MainWindow : Runnable
             .Distinct()
             .ToList();
 
-        VariableSetListView = new ListView
+        var listView = new ListView
         {
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
-            Height = Dim.Fill(1),
+            Height = Dim.Fill(),
         };
-        VariableSetListView.SetSource(new ObservableCollection<string>(allSets));
+        listView.SetSource(new ObservableCollection<string>(allSets));
 
-        var okPressed = false;
-        var shouldClear = false;
+        // Explicit dimensions are required in v2 because Dialog defaults to Dim.Auto(),
+        // which gives a Fill-sized ListView no height to compute against.
+        var dialog = new Dialog
+        {
+            Title = "Select Variable Set",
+            Width = 50,
+            Height = 15,
+        };
 
-        VariableSetListView.MouseEvent += (_, e) =>
+        var clear = new Button { Text = "_Clear Env" };   // Result = 0
+        var cancel = new Button { Text = "_Cancel" };     // Result = 1
+        var ok = new Button { Text = "_Ok", IsDefault = true }; // Result = 2
+
+        dialog.AddButton(clear);
+        dialog.AddButton(cancel);
+        dialog.AddButton(ok);
+        dialog.Add(listView);
+        listView.HasFocus = true;
+
+        listView.MouseEvent += (_, e) =>
         {
             if (e.Flags.HasFlag(MouseFlags.LeftButtonDoubleClicked))
             {
-                okPressed = true;
-                App!.RequestStop();
+                dialog.Result = 2;
+                dialog.RequestStop();
                 e.Handled = true;
             }
         };
 
-        var ok = new Button { Text = "Ok", IsDefault = true };
-        ok.Accepted += (_, _) => { okPressed = true; App!.RequestStop(); };
-        var cancel = new Button { Text = "Cancel" };
-        cancel.Accepted += (_, _) => { App!.RequestStop(); };
-        var clear = new Button { Text = "Clear Env" };
-        clear.Accepted += (_, _) => { shouldClear = true; App!.RequestStop(); };
-
-        var dialog = new Dialog { Title = "Select Variable Set" };
-        dialog.AddButton(ok);
-        dialog.AddButton(cancel);
-        dialog.AddButton(clear);
-        dialog.Add(VariableSetListView);
-        VariableSetListView.HasFocus = true;
-
         App!.Run(dialog);
-        dialog.Dispose();
 
-        if (shouldClear)
+        if (dialog.Result == 0) // Clear Env
         {
             _selectedConfig.Env = null;
         }
-
-        if (okPressed && VariableSetListView.SelectedItem.HasValue)
+        else if (dialog.Result == 2 && listView.SelectedItem.HasValue) // Ok
         {
-            _selectedConfig.Env = allSets[VariableSetListView.SelectedItem.Value];
+            _selectedConfig.Env = allSets[listView.SelectedItem.Value];
         }
+
+        dialog.Dispose();
         RefreshSelectedEnvDisplay();
     }
 
