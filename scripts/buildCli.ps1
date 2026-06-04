@@ -7,7 +7,7 @@ param (
 )
 
 function Build($includeRuntime, $path) {
-    $targets = @("linux-x64", "win-x64", "osx-x64", "osx-arm64")
+    $targets = @("linux-x64", "win-x64", "osx-arm64")
     foreach ($target in $targets) {
         dotnet publish ./src/Bloop.Cli/Bloop.Cli.csproj --nologo `
             -r $target -c Release $includeRuntime -p:PublishSingleFile=true `
@@ -29,12 +29,12 @@ if (!$skipResultCopy) {
         . "$PSScriptRoot/copyCli.sh" "$size/linux-x64"
     }
     if ($IsMacOs) {
-        . "$PSScriptRoot/copyCli.sh" "$size/osx-x64"
+        Copy-Item -Path "./releases/$size/osx-arm64/bloop" -Destination "${HOME}/bin/bloop"
     }
 }
 
 if ($buildRelease) {
-    $targets = @("linux-x64", "win-x64", "osx-x64", "osx-arm64")
+    $targets = @("linux-x64", "win-x64", "osx-arm64")
     foreach ($target in $targets) {
         Compress-Archive -Force -Path ./releases/big/$target/bloop* -DestinationPath ./releases/$target.zip
     }

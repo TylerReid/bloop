@@ -1,0 +1,81 @@
+{
+  "$schema": "https://gui-cs.github.io/Terminal.Gui/schemas/tui-config-schema.json",
+  "Theme": "Bloop",
+  "Themes": [
+    {
+      "Bloop": {
+        "Window.DefaultBorderStyle": "Single",
+        "Dialog.DefaultBorderStyle": "Heavy",
+        "Dialog.DefaultShadow": "Transparent",
+        "FrameView.DefaultBorderStyle": "Rounded",
+        "Button.DefaultShadow": "None",
+        "Schemes": [
+          {
+            "Base": {
+              "Normal":    { "Foreground": "White",       "Background": "Black"       },
+              "Focus":     { "Foreground": "Black",       "Background": "#5fbb70" },
+              "HotNormal": { "Foreground": "#5fbb70", "Background": "Black"       },
+              "HotFocus":  { "Foreground": "Black",       "Background": "#5fbb70"       },
+              "Highlight": { "Foreground": "Black",       "Background": "#5fbb70" },
+              "Active":    { "Foreground": "Black",       "Background": "#5fbb70"       },
+              "Disabled":  { "Foreground": "DarkGray",    "Background": "Black"       },
+              "ReadOnly":  { "Foreground": "Gainsboro",   "Background": "Black"       },
+              "Editable":  { "Foreground": "White",       "Background": "DarkGray"    },
+
+              "Code": { "Foreground": "LightGray", "Background": "Onyx", "Style": "None" },
+              "CodeComment": { "Foreground": "#6a9955", "Background": "None", "Style": "None" },
+              "CodeKeyword": { "Foreground": "#569cd6", "Background": "None", "Style": "None" },
+              "CodeString": { "Foreground": "#ce9178", "Background": "None", "Style": "None" },
+              "CodeNumber": { "Foreground": "#b5cea8", "Background": "None", "Style": "None" },
+              "CodeOperator": { "Foreground": "#d4d4d4", "Background": "None", "Style": "None" },
+              "CodeType": { "Foreground": "#4ec9b0", "Background": "None", "Style": "None" },
+              "CodePreprocessor": { "Foreground": "#c586c0", "Background": "None", "Style": "None" },
+              "CodeIdentifier": { "Foreground": "#9cdcfe", "Background": "None", "Style": "None" },
+              "CodeConstant": { "Foreground": "#569cd6", "Background": "None", "Style": "None" },
+              "CodePunctuation": { "Foreground": "#d4d4d4", "Background": "None", "Style": "None" },
+              "CodeFunctionName": { "Foreground": "#dcdcaa", "Background": "None", "Style": "None" },
+              "CodeAttribute": { "Foreground": "#9cdcfe", "Background": "None", "Style": "None" }
+            }
+          },
+          {
+            "Menu": {
+              "Normal":    { "Foreground": "#5fbb70",       "Background": "#1e1e1e"       },
+              "Focus":     { "Foreground": "Black",       "Background": "#5fbb70" },
+              "HotNormal": { "Foreground": "#5fbb70", "Background": "#1e1e1e"       },
+              "HotFocus":  { "Foreground": "Black",       "Background": "#5fbb70"       },
+              "Active":    { "Foreground": "Black",       "Background": "#5fbb70"       },
+              "Disabled":  { "Foreground": "DarkGray",    "Background": "#1e1e1e"       }
+            }
+          },
+          {
+            "Accent": {
+              "Normal":    { "Foreground": "#5fbb70", "Background": "Black"       },
+              "Focus":     { "Foreground": "Black",       "Background": "#5fbb70" },
+              "HotNormal": { "Foreground": "White",       "Background": "Black"       },
+              "HotFocus":  { "Foreground": "Black",       "Background": "#5fbb70"       },
+              "Highlight": { "Foreground": "Black",       "Background": "#5fbb70" }
+            }
+          },
+          {
+            "Dialog": {
+              "Normal":    { "Foreground": "White",       "Background": "#1e1e1e"    },
+              "Focus":     { "Foreground": "Black",       "Background": "#5fbb70" },
+              "HotNormal": { "Foreground": "#5fbb70", "Background": "#1e1e1e"    },
+              "HotFocus":  { "Foreground": "#5fbb70",       "Background": "#1e1e1e"       },
+              "Active":    { "Foreground": "White",       "Background": "#1e1e1e"        },
+              "Disabled":  { "Foreground": "DarkGray",    "Background": "DarkGray"    }
+            }
+          },
+          {
+            "Error": {
+              "Normal":    { "Foreground": "White",       "Background": "Red"         },
+              "Focus":     { "Foreground": "Black",       "Background": "BrightRed"   },
+              "HotNormal": { "Foreground": "Yellow",      "Background": "Red"         },
+              "HotFocus":  { "Foreground": "Black",       "Background": "BrightRed"   }
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

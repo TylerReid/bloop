@@ -34,6 +34,64 @@ public record Request : BaseModel
     public Dictionary<string, string> Query { get; set; } = new();
     
     public override string ToString() => base.ToString();
+
+    public string ToHttpString()
+    {
+        return $"""
+            {Method} {Uri}
+            {Headers.Aggregate("", (acc, kv) => acc + $"{kv.Key}: {kv.Value}\n").TrimEnd("\n")}
+            {BodyString()}
+            """;
+    }
+
+    public static Request FromHttpString(string http)
+    {
+        var lines = http.Split('\n');
+
+        var firstLine = lines[0].Trim();
+        var spaceIndex = firstLine.IndexOf(' ');
+        var method = spaceIndex >= 0 ? new HttpMethod(firstLine[..spaceIndex]) : HttpMethod.Get;
+        var uri = spaceIndex >= 0 ? firstLine[(spaceIndex + 1)..].Trim() : firstLine;
+
+        var headers = new Dictionary<string, string>();
+        var bodyParts = new List<string>();
+        var inBody = false;
+
+        for (var i = 1; i < lines.Length; i++)
+        {
+            var line = lines[i];
+            if (!inBody)
+            {
+                var colonIndex = line.IndexOf(": ");
+                if (colonIndex > 0 && line[..colonIndex].All(c => char.IsLetterOrDigit(c) || c == '-'))
+                {
+                    headers[line[..colonIndex].Trim()] = line[(colonIndex + 2)..].Trim();
+                    continue;
+                }
+                inBody = true;
+            }
+            bodyParts.Add(line);
+        }
+
+        var body = string.Join('\n', bodyParts).Trim();
+
+        return new Request
+        {
+            Method = method,
+            Uri = uri,
+            Headers = headers,
+            Body = body.Length > 0 ? body : null,
+        };
+    }
+
+    private string? BodyString()
+    {
+        if (Form is not null)
+        {
+            return Form.Aggregate("", (acc, kv) => acc + $"{kv.Key}={kv.Value}&").TrimEnd('&');
+        }
+        return Body;
+    }
 }
 
 [DebuggerDisplay("{Name}")]

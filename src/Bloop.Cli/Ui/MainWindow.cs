@@ -1,56 +1,79 @@
 ﻿using Bloop.Core;
-using System.Collections.Generic;
-using System.Data;
+using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Net.Http.Handlers;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Terminal.Gui;
-using Terminal.Gui.Graphs;
+using Terminal.Gui.App;
+using Terminal.Gui.Configuration;
+using Terminal.Gui.Document;
+using Terminal.Gui.Editor;
+using Terminal.Gui.Highlighting;
+using Terminal.Gui.Views;
+using Terminal.Gui.ViewBase;
+using Terminal.Gui.Input;
 
 namespace Bloop.Cli.Ui;
 
-internal class MainWindow : Toplevel
+internal class MainWindow : Runnable
 {
     private List<Config> _configs = new();
     private Config? _selectedConfig;
     private Request? _selectedRequest;
-    private readonly Blooper _blooper = new();
-    private readonly DataTable _scratchVariables = new();
+    private readonly Blooper _blooper;
 
     private FrameView LeftPane { get; set; }
     private ListView RequestListView { get; set; }
     private FrameView RightPane { get; set; }
-    private TextView ResultDetails { get; set; }
-    private TextView ResultsView { get; set; }
+    private MenuBar ResultsMenuBar { get; set; }
+    private Editor ResultDetails { get; set; }
+    private View DetailsView { get; set; }
+    private Editor ResultsView { get; set; }
     private StatusBar MainStatusBar { get; set; }
-    private StatusItem ProcessingItem { get; set; }
-    private StatusBar VariableStatusBar { get; set; }
-    private TableView? VariableTableView { get; set; }
-    private ListView? VariableSetListView { get; set; }
-    private StatusItem SelectedVariableSet { get; set; }
+    private Shortcut ProcessingItem { get; set; }
+    private Shortcut ThemeItem { get; set; }
+    private Shortcut SelectedVariableSet { get; set; }
+    private MenuItem SaveFile { get; set; }
+    private MenuItem CopyToClipboard { get; set; }
+    private ProgressBar RequestSpinner { get; set; }
+    
+    // #002663 amex blue
+    // #5fbb70 kabbage green
 
     public MainWindow()
     {
+        var httpHandler = new ProgressMessageHandler
+        {
+            InnerHandler = new HttpClientHandler(),
+        };
+        httpHandler.HttpReceiveProgress += (_, _) => PulseSpinner();
+        httpHandler.HttpSendProgress += (_, _) => PulseSpinner();
+        _blooper =  new Blooper(new HttpClient(httpHandler));
+        
         X = 0;
         Y = 0;
         Width = Dim.Fill();
         Height = Dim.Fill();
 
-        LeftPane = new FrameView("Requests") 
+        LeftPane = new FrameView
         {
-            X = 0, 
+            Title = "Requests",
+            X = 0,
             Y = 0,
-            Width = Dim.Percent(25),
+            Width = Dim.Fill(Dim.Func(_ => RightPane!.Frame.Width)),
             Height = Dim.Fill(1),
             CanFocus = true,
         };
-        RightPane = new FrameView("Results")
+        RightPane = new FrameView
         {
-            X = Pos.Right(LeftPane),
+            Title = "Results",
+            X = Pos.Percent(25),
             Y = 0,
             Width = Dim.Fill(),
             Height = Dim.Fill(1),
+            Arrangement = ViewArrangement.LeftResizable,
+            SuperViewRendersLineCanvas = true,
             CanFocus = true,
         };
 
@@ -60,142 +83,157 @@ internal class MainWindow : Toplevel
             Y = 0,
             Width = Dim.Fill(),
             Height = Dim.Fill(),
-            AllowsMarking = false,
         };
 
-        RequestListView.SelectedItemChanged += RequestSelectionChanged;
-        RequestListView.KeyPress += RequestListKeyPressed;
-        RequestListView.MouseClick += RequestListClick;
+        RequestListView.ValueChanged += RequestSelectionChanged;
+        RequestListView.KeyDown += RequestListKeyDown;
+        RequestListView.MouseEvent += RequestListMouseEvent;
 
         LeftPane.Add(RequestListView);
 
-        ResultDetails = new TextView
+        SaveFile = new MenuItem("Save Result", Key.Empty, SaveResultToFile);
+        SaveFile.Enabled = false;
+        CopyToClipboard = new MenuItem("Copy Result", Key.Empty, CopyResultToClipboard);
+        CopyToClipboard.Enabled = false;
+        
+        ResultsMenuBar = new MenuBar
+        ([
+            new MenuBarItem("File", [
+                SaveFile,
+            ]),
+            new MenuBarItem("Edit", [
+                CopyToClipboard,
+            ]),
+        ]);
+
+        var menuLine = new Line
+        {
+            X = 0,
+            Y = Pos.Bottom(ResultsMenuBar),
+            Width = Dim.Fill(),
+            Orientation = Orientation.Horizontal,
+        };
+
+        ResultDetails = new Editor
         {
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
-            Height = Dim.Percent(10),
+            Height = Dim.Fill(),
             CanFocus = true,
-            ColorScheme = new ColorScheme(),
             ReadOnly = true,
         };
-
-        var line = new LineView
+        
+        DetailsView = new View()
         {
             X = 0,
-            Y = Pos.Bottom(ResultDetails),
-            Orientation = Orientation.Horizontal,
+            Y = Pos.Bottom(menuLine),
+            Width = Dim.Fill(),
+            Height = Dim.Percent(10),
         };
         
-        ResultsView = new TextView
+        DetailsView.Add(ResultDetails);
+
+        var line = new Line
+        {
+            X = 0,
+            Y = Pos.Bottom(DetailsView),
+            Width = Dim.Fill(),
+            Orientation = Orientation.Horizontal,
+        };
+
+        ResultsView = new Editor
         {
             X = 0,
             Y = Pos.Bottom(line),
             Width = Dim.Fill(),
             Height = Dim.Fill(),
             CanFocus = true,
-            ColorScheme = new ColorScheme(),
             ReadOnly = true,
+            ViewportSettings = ViewportSettingsFlags.HasScrollBars,
+            GutterOptions = GutterOptions.None,
         };
 
-        RightPane.Add(ResultDetails);
+        RightPane.Add(ResultsMenuBar);
+        RightPane.Add(menuLine);
+        RightPane.Add(DetailsView);
         RightPane.Add(line);
         RightPane.Add(ResultsView);
 
-        ProcessingItem = new StatusItem(Key.Null, "", () => { });
-        SelectedVariableSet = new StatusItem(Key.X | Key.CtrlMask, "", SwitchVariableSet);
-
+        ProcessingItem = new Shortcut(Key.Empty, "", null) { BindKeyToApplication = false };
+        ThemeItem = new Shortcut(Key.T.WithCtrl, $"Theme", SwitchToThemeView) { BindKeyToApplication = true };
+        SelectedVariableSet = new Shortcut(Key.X.WithCtrl, "", SwitchVariableSet) { BindKeyToApplication = true };
+        
         MainStatusBar = new StatusBar
         {
-            Visible = true,
-            CanFocus = false,
-            Items =
-            [
-                new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Quit", RequestStop),
-                new StatusItem(Key.V | Key.AltMask, "~Alt-V~ Variables", SwitchToVariableView),
-                new StatusItem(Key.C | Key.CtrlMask, "~Ctrl-C~ Copy Result", CopyResultToClipboard),
-                new StatusItem(Key.Tab | Key.CtrlMask, "~Alt-Tab~ Switch Bloops", CycleConfigs),
-                SelectedVariableSet,
-                ProcessingItem,
-            ],
+            SchemeName = "Base",
         };
+        MainStatusBar.Add(
+            new Shortcut(Key.Q.WithCtrl, "Quit", () => App!.RequestStop()) { BindKeyToApplication = true },
+            new Shortcut(Key.V.WithAlt, "Variables", SwitchToVariableView) { BindKeyToApplication = true },
+            new Shortcut(Key.Tab.WithCtrl, "Switch Bloops", CycleConfigs) { BindKeyToApplication = true },
+            SelectedVariableSet,
+            new Shortcut(Key.R.WithCtrl, "Reload", () => _ = LoadAsync()) { BindKeyToApplication = true },
+            ThemeItem,
+            new Shortcut(Key.E.WithCtrl, "ScratchPad", SwitchToScratchPadView) { BindKeyToApplication = true },
+            ProcessingItem
+        );
 
-        VariableStatusBar = new StatusBar
-        {
-            Visible = true,
-            CanFocus = false,
-            Items =
-            [
-                new StatusItem(Key.Q | Key.CtrlMask, "~Ctrl-Q~ Back", SwitchToMainView)
-            ],
-        };
-
-        _scratchVariables.Columns.Add("Name", typeof(string));
-        _scratchVariables.Columns.Add("Value", typeof(string));
+        CreateRequestSpinner();
+        ActivityPulsar.ActivityStarted += (_, _) => PulseSpinner();
 
         RefreshSelectedEnvDisplay();
-        SwitchToMainView();
+        Add(LeftPane);
+        Add(RightPane);
+        Add(MainStatusBar);
 
         _ = LoadAsync();
     }
 
-    private void CopyResultToClipboard()
+    private void CreateRequestSpinner()
     {
-        if (ResultsView.Text.ToString() != null)
+        RequestSpinner = new ProgressBar
         {
-            Clipboard.TrySetClipboardData(ResultsView.Text.ToString());
+            X = 0,
+            Y = 0,
+            Width = Dim.Fill(),
+            ProgressBarStyle = ProgressBarStyle.MarqueeContinuous,
+            BidirectionalMarquee = false,
+            SyncWithTerminal = false,
+        };
+    }
+
+    private void PulseSpinner() => App!.Invoke(_ => RequestSpinner.Pulse());
+
+    private void SaveResultToFile()
+    {
+        if (ResultsView.Document?.Text == null)
+        {
+            return;
+        }
+        var dialog = new SaveDialog();
+        dialog.Title = "Save Result";
+        App!.Run(dialog);
+        if (dialog.FileName != null)
+        {
+            File.WriteAllText(dialog.FileName, ResultsView.Document.Text);
         }
     }
 
-    private void SwitchToMainView()
+    private void CopyResultToClipboard()
     {
-        foreach (DataRow row in _scratchVariables.Rows)
+        if (ResultsView.Document?.Text != null)
         {
-            var variable =_selectedConfig!.Variables
-                .First(x => x.Name == (string)row["Name"]);
-            variable.Value = row["Value"] as string;
-            variable.SatisfiedEnv = _selectedConfig.Env;
+            App!.Clipboard?.TrySetClipboardData(ResultsView.Document.Text);
         }
-        _scratchVariables.Clear();
-        RemoveAll();
-        Add(LeftPane);
-        Add(RightPane);
-        Add(MainStatusBar);
     }
 
     private void SwitchToVariableView()
     {
         if (_selectedConfig == null) { return; }
-        RemoveAll();
-
-        var frame = new FrameView("Variables")
-        {
-            X = 0,
-            Y = 0,
-            Width = Dim.Fill(),
-            Height = Dim.Fill(1),
-            CanFocus = true,
-        };
-
-        foreach (var variable in _selectedConfig.Variables)
-        {
-            _scratchVariables.Rows.Add(variable.Name, variable.Value);
-        }
-
-        VariableTableView = new TableView
-        {
-            X = 0,
-            Y = 0,
-            Width = Dim.Fill(),
-            Height = Dim.Fill(),
-            Table = _scratchVariables,
-        };
-
-        VariableTableView.CellActivated += EditCurrentCell;
-
-        frame.Add(VariableTableView);
-        Add(frame);
-        Add(VariableStatusBar);
+        var variableView = new VariableView(_selectedConfig);
+        App!.Run(variableView);
+        variableView.Dispose();
     }
 
     private void SwitchVariableSet()
@@ -208,119 +246,105 @@ internal class MainWindow : Toplevel
             .Distinct()
             .ToList();
 
-        VariableSetListView = new ListView
+        var listView = new ListView
         {
             X = 0,
             Y = 0,
             Width = Dim.Fill(),
-            Height = Dim.Fill(1),
+            Height = Dim.Fill(),
         };
-        VariableSetListView.SetSource(allSets);
+        listView.SetSource(new ObservableCollection<string>(allSets));
 
-        var okPressed = false;
-        var shouldClear = false;
-
-        VariableSetListView.MouseClick += (args) =>
+        // Explicit dimensions are required in v2 because Dialog defaults to Dim.Auto(),
+        // which gives a Fill-sized ListView no height to compute against.
+        var dialog = new Dialog
         {
-            if (args.MouseEvent.Flags.HasFlag(MouseFlags.Button1DoubleClicked))
+            Title = "Select Variable Set",
+            Width = 50,
+            Height = 15,
+        };
+
+        var clear = new Button { Text = "_Clear Env" };   // Result = 0
+        var cancel = new Button { Text = "_Cancel" };     // Result = 1
+        var ok = new Button { Text = "_Ok", IsDefault = true }; // Result = 2
+
+        dialog.AddButton(clear);
+        dialog.AddButton(cancel);
+        dialog.AddButton(ok);
+        dialog.Add(listView);
+        listView.HasFocus = true;
+
+        listView.MouseEvent += (_, e) =>
+        {
+            if (e.Flags.HasFlag(MouseFlags.LeftButtonDoubleClicked))
             {
-                okPressed = true;
-                Application.RequestStop();
+                dialog.Result = 2;
+                dialog.RequestStop();
+                e.Handled = true;
             }
         };
-        var ok = new Button("Ok", is_default: true);
-        ok.Clicked += () => { okPressed = true; Application.RequestStop(); };
-        var cancel = new Button("Cancel");
-        cancel.Clicked += () => { Application.RequestStop(); };
-        var clear = new Button("Clear Env");
-        clear.Clicked += () => { shouldClear = true; Application.RequestStop(); };
-        var dialog = new Dialog("Enter a value", ok, cancel, clear);
 
-        dialog.Add(VariableSetListView);
-        VariableSetListView.SetFocus();
+        App!.Run(dialog);
 
-        Application.Run(dialog);
-
-        if (shouldClear)
+        if (dialog.Result == 0) // Clear Env
         {
             _selectedConfig.Env = null;
         }
-
-        if (okPressed)
+        else if (dialog.Result == 2 && listView.SelectedItem.HasValue) // Ok
         {
-            _selectedConfig.Env = allSets[VariableSetListView.SelectedItem];
+            _selectedConfig.Env = allSets[listView.SelectedItem.Value];
         }
+
+        dialog.Dispose();
         RefreshSelectedEnvDisplay();
     }
 
     private void RefreshSelectedEnvDisplay()
     {
-        SelectedVariableSet.Title = $"~Ctrl-X~ Set: {_selectedConfig?.Env ?? "None"}";
-        MainStatusBar.SetChildNeedsDisplay();
+        SelectedVariableSet.Title = $"Set: {_selectedConfig?.Env ?? "None"}";
+        MainStatusBar.SetNeedsDraw();
     }
 
-    private void EditCurrentCell(TableView.CellActivatedEventArgs e)
+    private void RequestListKeyDown(object? sender, Key args)
     {
-        if (e.Table == null || e.Col != 1) { return; }
-        var oldValue = e.Table.Rows[e.Row][e.Col] as string;
-        var okPressed = false;
-
-        var ok = new Button("Ok", is_default: true);
-        ok.Clicked += () => { okPressed = true; Application.RequestStop(); };
-        var cancel = new Button("Cancel");
-        cancel.Clicked += () => { Application.RequestStop(); };
-        var dialog = new Dialog("Enter a value", ok, cancel);
-        var label = new Label
+        if (args == Key.Enter)
         {
-            X = 0,
-            Y = 1,
-            Text = e.Table.Rows[e.Row][0].ToString(),
-        };
-        var textField = new TextField
-        {
-            Text = oldValue ?? "",
-            X = 0,
-            Y = 2,
-            Width = Dim.Fill(),
-        };
-
-        dialog.Add(label, textField);
-        textField.SetFocus();
-        Application.Run(dialog);
-
-        if (okPressed)
-        {
-            var newValue = textField.Text.ToString();
-            e.Table.Rows[e.Row][e.Col] = newValue as object ?? DBNull.Value;
-            VariableTableView?.Update();
+            _ = SendSelectedRequest();
+            args.Handled = true;
         }
     }
 
-    private void RequestListKeyPressed(KeyEventEventArgs args)
+    private void RequestListMouseEvent(object? sender, Mouse args)
     {
-        if (args.KeyEvent.Key == Key.Enter)
+        if (args.Flags.HasFlag(MouseFlags.LeftButtonDoubleClicked))
         {
             _ = SendSelectedRequest();
-        }
-    }
-
-    private void RequestListClick(MouseEventArgs args)
-    {
-        if (args.MouseEvent.Flags.HasFlag(MouseFlags.Button1DoubleClicked))
-        {
-            _ = SendSelectedRequest();
+            args.Handled = true;
         }
     }
 
     private async Task SendSelectedRequest()
     {
         if (_selectedConfig == null || _selectedRequest == null) { return; }
-
-        ProcessingItem.Title = ResultsView.Text = "Sending bloop";
+        
+        App!.Invoke(_ =>
+        {
+            ProcessingItem.Title = "Sending bloop";
+            DetailsView.RemoveAll();
+            DetailsView.Add(RequestSpinner);
+            ResultsView.Document = new TextDocument("");
+        });
 
         var stopwatch = new Stopwatch();
         stopwatch.Start();
         var result = await _blooper.SendRequest(_selectedConfig, _selectedRequest);
+        
+        var detailsText = "";
+        var responseText = "";
+        var isJson = false;
+        var isXml = false;
+        var hasError = false;
+
         await result.MatchAsync(async response =>
         {
             var sb = new StringBuilder();
@@ -330,36 +354,70 @@ internal class MainWindow : Toplevel
             {
                 sb.AppendLine($"{k}: {v.Aggregate((a, b) => $"{a},{b}")}");
             }
+            detailsText = sb.ToString();
 
-            ResultDetails.Text = sb.ToString();
-
-            if (response.Content.Headers.ContentType?.MediaType == "application/json")
+            var mediaType = response.Content.Headers.ContentType?.MediaType ?? "";
+            if (mediaType.Contains("json"))
             {
+                isJson = true;
                 var parsedJson = JsonNode.Parse(await response.Content!.ReadAsStreamAsync());
-                var json = parsedJson!.ToJsonString(options: new JsonSerializerOptions
-                {
-                    WriteIndented = true,
-                });
-                ResultsView.Text = json;
+                responseText = parsedJson!.ToJsonString(options: new JsonSerializerOptions { WriteIndented = true });
+            }
+            else if (mediaType.Contains("xml"))
+            {
+                isXml = true;
+                responseText = await response.Content.ReadAsStringAsync();
             }
             else
             {
-                ResultsView.Text = await response.Content.ReadAsStringAsync();
+                responseText = await response.Content.ReadAsStringAsync();
             }
         },
         error =>
         {
-            ResultDetails.Text = "Something bad happened!";
-            ResultsView.Text = error.Message;
+            hasError = true;
+            detailsText = "Something bad happened!";
+            responseText = error.Message;
             return Task.CompletedTask;
         });
+
         stopwatch.Stop();
-        ProcessingItem.Title = $"Response Time: {stopwatch.Elapsed}";
+        var elapsed = stopwatch.Elapsed;
+        
+        App!.Invoke(() =>
+        {
+            DetailsView.RemoveAll();
+            CreateRequestSpinner();
+            DetailsView.Add(ResultDetails);
+            ResultDetails.Document = new TextDocument(detailsText);
+            ResultsView.GutterOptions = GutterOptions.LineNumbers | GutterOptions.Folding;
+            if (hasError || (!isJson && !isXml))
+            {
+                ResultsView.HighlightingDefinition = null;
+                ResultsView.Document = new TextDocument(responseText);
+            }
+            else if (isJson)
+            {
+                ResultsView.HighlightingDefinition = HighlightingManager.Instance.GetDefinitionByExtension(".json");
+                ResultsView.Document = new TextDocument(responseText);
+            }
+            else
+            {
+                ResultsView.HighlightingDefinition = HighlightingManager.Instance.GetDefinitionByExtension(".xml");
+                ResultsView.Document = new TextDocument(responseText);
+            }
+            SaveFile.Enabled = !string.IsNullOrWhiteSpace(ResultsView.Document.Text);
+            CopyToClipboard.Enabled = !string.IsNullOrWhiteSpace(ResultsView.Document.Text);
+            ProcessingItem.Title = $"Response Time: {elapsed}";
+        });
     }
 
-    private void RequestSelectionChanged(ListViewItemEventArgs args)
+    private void RequestSelectionChanged(object? sender, ValueChangedEventArgs<int?> args)
     {
-        _selectedRequest = _selectedConfig!.Requests[args.Item];
+        if (args.NewValue.HasValue)
+        {
+            _selectedRequest = _selectedConfig!.Requests[args.NewValue.Value];
+        }
     }
 
     private async Task LoadAsync()
@@ -372,9 +430,10 @@ internal class MainWindow : Toplevel
     {
         _selectedConfig = config;
         if (config == null) { return; }
-        RequestListView.SetSource(config.Requests.Select(x => x.Name).ToList());
+        RequestListView.SetSource(new ObservableCollection<string>(
+            config.Requests.Select(x => x.Name)));
     }
-    
+
     private void CycleConfigs()
     {
         if (_selectedConfig == null)
@@ -385,5 +444,24 @@ internal class MainWindow : Toplevel
         var index = _configs.IndexOf(_selectedConfig) + 1;
         var newConfig = _configs[index >= _configs.Count ? 0 : index];
         SelectConfig(newConfig);
+    }
+
+    private void SwitchToThemeView()
+    {
+        using var themeView = new ThemeView();
+        App!.Run(themeView);
+        ThemeItem.Title = $"Theme: {ThemeManager.GetCurrentThemeName()}";
+        MainStatusBar.SetNeedsDraw();
+    }
+
+    private void SwitchToScratchPadView()
+    {
+        if (_selectedConfig == null || _selectedRequest == null)
+        {
+            return;
+        }
+        
+        using var scratchPad = new ScratchPadView(_blooper, _selectedConfig, _selectedRequest);
+        App!.Run(scratchPad);
     }
 }
